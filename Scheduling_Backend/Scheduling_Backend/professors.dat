@@ -1,0 +1,12 @@
+//profid, courses[, courses]
+0 , cmpsc:101
+1 , cmpsc:121, cmpsc:221
+2 , cmpsc:121, cmpsc:101
+3 , cmpsc:121, cmpsc:200, cmpsc:122
+4 , cmpsc:221, cmpsc:470, cmpsc:122
+5 , cmpsc:200, cmpsc:360
+6 , cmpsc:200, cmpsc:360
+7 , cmpsc:360, cmpsc:200
+8 , cmpsc:412, cmpsc:421, cmpsc:444, cmpsc:462
+9 ,	cmpsc:472, cmpsc:487w, cmpsc:312
+10,	cmpsc:487w, cmpsc:472, cmpsc:312
