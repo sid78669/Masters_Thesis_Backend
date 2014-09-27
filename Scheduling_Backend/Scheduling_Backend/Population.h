@@ -7,6 +7,8 @@
 #define DEBUG_PROF 0
 #define DEBUG_TIMESLOT 0
 #define DEBUG_INIT_CHROMOSOME 1
+#define DEBUG_INIT_POPULATION 0
+#define DEBUG_INIT_POPULATION_COMPARED 1
 
 #include "Chromosome.h"
 #include "TimeSlot.h"
@@ -33,6 +35,8 @@ private:
     int professorCount;
     int timeSlotCount;
     int creditCount;
+    const int REPAIR_TRIES = 5;
+    Helper h;
     Chromosome **individuals;
     TimeSlot ** timeSlots;
     int ** incompatibleSections;
@@ -51,6 +55,8 @@ private:
     void initPopulationFromFirst( );
 
     Chromosome * mutate(int individualID);
+    Chromosome * repairChromosome(Chromosome * borken);
+    bool validateChromosome(Chromosome *toValidate);
 
 };
 

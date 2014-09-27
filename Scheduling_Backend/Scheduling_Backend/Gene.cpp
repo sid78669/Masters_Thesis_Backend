@@ -2,8 +2,8 @@
 
 
 Gene::Gene( ) {
-    profID = 0;
-    timeID = 0;
+    profID = -1;
+    timeID = -1;
 }
 
 

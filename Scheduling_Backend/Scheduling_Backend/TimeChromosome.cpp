@@ -1,7 +1,7 @@
 #include "TimeChromosome.h"
 
 
-TimeChromosome::TimeChromosome( ) {
+TimeChromosome::TimeChromosome(int geneLength, Chromosome source, int timeGeneLength) {
 }
 
 

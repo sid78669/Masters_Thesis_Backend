@@ -19,10 +19,11 @@ public:
     int getProf(int geneID);
     Gene getGene(int geneID);
 
-    void calculateFitness( );
+    void setFitness(int);
     int getFitness( );
 
     string print( );
+    string print(int gene);
 private:
     Gene *genes;
     int gene_length;

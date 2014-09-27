@@ -50,6 +50,10 @@ int Chromosome::getFitness( ) {
     return fitness;
 }
 
+void Chromosome::setFitness(int newFitness ) {
+    fitness = newFitness;
+}
+
 string Chromosome::print( ) {
     string rtnVal;
     for (int i = 0; i < gene_length; i++) {
@@ -59,4 +63,8 @@ string Chromosome::print( ) {
     rtnVal += "----------------------------\n";
 
     return rtnVal;
+}
+
+string Chromosome::print(int geneID) {
+    return to_string(genes[geneID].getProfID( )) + ", " + to_string(genes[geneID].getTimeID( ));
 }
