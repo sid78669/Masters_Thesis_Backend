@@ -1,19 +1,18 @@
 #include "Population.h"
 
-
-Population::Population(string dataFilePath, int populationSize, int generationCount, double mutationProbability) {
+Population::Population(string dataFilePath, int populationSize, int generationCount, int _replacementWait, double mutationProbability) {
     data_file_path = dataFilePath;
     population_size = populationSize;
     generation_count = generationCount;
+    replacementWait = _replacementWait;
     mutation_probability = mutationProbability;
     section_count = 0;
     professorCount = 0;
+    weakestIndividualID = 0;
     readDatFiles( );
-    //exit(0);
-    for (int i = 1; i < populationSize; i++) {
-        individuals[i] = new Chromosome(section_count);
-    }
-
+    Evolve( );
+    cout << "Complete....";
+    cin >> dataFilePath;
 }
 
 
@@ -36,10 +35,11 @@ void Population::readDatFiles( ) {
     int courseCount = 1000;
 
 
-    cout << "Beginning Initial Setup...." << endl;
+    cout << "Beginning Initial Setup...." << endl << endl;
 
     //Read the section List
     readSectionList(courses);
+    cout << endl;
     //Since we have the section count now, initialize all arrays dependent on the number of sections.
     incompatibleSections = new int*[section_count];
     sectionProf = new int*[section_count];
@@ -47,28 +47,36 @@ void Population::readDatFiles( ) {
 
     //Read the course list
     readCourseList(courses);
+    cout << endl;
 
     //Now that the courses are setup, time to setup the professor. This is done AFTER courses because each professor is associated with a course.
     readProfessorList(courses);
+    cout << endl;
 
     //The only thing left for initial data, other than an initial chromosome, is timeslots.
     readTimeSlotList( );
+    cout << endl;
 
     //Setup the Individuals array
     individuals = new Chromosome*[population_size];
 
     //FINALLY! Use the given chromosome blueprint to create the first chromosome
     readInitialSchedule( );
-    cout << "First Valid: " << validateChromosome(individuals[0]) << endl;
+    cout << endl;
+
+    cout << "First Valid: " << validateChromosome(individuals[0]) << endl << endl;
+
     //Now we have enough basic information that we can populate our individuals based on the first one.
     initPopulationFromFirst( );
 
-    //Calculate the fitness of each individual
-    /*for (int i = 0; i < population_size; i++) {
-        individuals[i]->calculateFitness( );
-        }*/
+    //Output all individuals
+    for (int i = 0; i < population_size; i++) {
+        cout << "Individual " << i << endl;
+        cout << individuals[i]->print( );
+    }
 
-    cout << "Initial Setup Complete" << endl;
+
+    cout << endl << "Initial Setup Complete" << endl << endl;
 }
 
 /*
@@ -175,7 +183,8 @@ void Population::readCourseList(vector<string> courseList) {
 
             //Loop through the sections and set the values for credits and incompatible sections
             for (int i = 1; i <= courseSection[courseLoc][0]; i++) {
-                cout << courseSection[courseLoc][i] << ": ";
+                if (DEBUG_COURSES)
+                    cout << courseSection[courseLoc][i] << ": ";
                 int sectionID = courseSection[courseLoc][i];
                 sectionCredit[sectionID] = cred;
 
@@ -183,14 +192,15 @@ void Population::readCourseList(vector<string> courseList) {
                 incompatibleSections[sectionID] = new int[incompatibles.size( ) + 1];
                 incompatibleSections[sectionID][0] = incompatibles.size( );
                 for (int j = 1; j <= (signed) incompatibles.size( ); j++) {
-                    cout << ", " << incompatibles.at(j - 1);
+                    if (DEBUG_COURSES)
+                        cout << ", " << incompatibles.at(j - 1);
                     incompatibleSections[sectionID][j] = incompatibles.at(j - 1);
                 }
-                cout << endl;
+                if (DEBUG_COURSES)
+                    cout << endl;
             }
         }
     }
-
 
     cout << "Finished reading courses..." << endl;
 }
@@ -321,37 +331,36 @@ void Population::readInitialSchedule( ) {
         if (DEBUG_INIT_CHROMOSOME)
             cout << individuals[0]->print( ) << endl;
     }
-
+    individuals[0]->updateFitness(incompatibleSections);
+    weakestIndividualID = 0;
     cout << "First Chromosome Initialized..." << endl;
 }
 
 void Population::initPopulationFromFirst( ) {
     cout << "Initiating generation of population...." << endl;
 
-    Chromosome * initChromosome;
-    Chromosome * postMutation;
-    Chromosome * postRepair;
+    Chromosome * initChromosome = nullptr;
+    Chromosome * postMutation = nullptr;
+    Chromosome * postRepair = nullptr;
 
     for (int i = 1; i < population_size; i++) {
         if (DEBUG_INIT_POPULATION)
             cout << "Generating individual (" << to_string(i) << ")..." << endl;
-
+        
         individuals[i] = new Chromosome(individuals[0]);
-        initChromosome = new Chromosome(individuals[0]);
+        initChromosome = individuals[0];
         if (DEBUG_INIT_POPULATION)
             cout << "Pre-Mutation: " << endl << individuals[i]->print( );
 
-        Chromosome * temp = mutate(i);
-        delete individuals[i];
-        individuals[i] = new Chromosome(temp);
-        postMutation = new Chromosome(temp);
-        delete temp;
+        individuals[i]->mutate(sectionProf, section_count, creditTimeSlot, timeSlots, &h, mutation_probability);
+
+        postMutation = individuals[i];
 
         if (DEBUG_INIT_POPULATION)
             cout << "Post-Mutation: " << endl << individuals[i]->print( ) << endl;
 
         //After mutation, repair.
-        individuals[i] = repairChromosome(individuals[i]);
+        individuals[i]->repair(sectionProf, section_count, creditTimeSlot, timeSlots, &h, incompatibleSections, REPAIR_TRIES);
         postRepair = new Chromosome(individuals[i]);
 
         if (DEBUG_INIT_POPULATION)
@@ -366,139 +375,23 @@ void Population::initPopulationFromFirst( ) {
             cout << "----------------------------------------------------------------" << endl;
 
         }
+        individuals[i]->updateFitness(incompatibleSections);
+        cout << i << " valid: " << validateChromosome(individuals[i]) << endl;
+        cout << "Fitness for " << i << " is " << individuals[i]->getFitness( ) << endl << endl;
+        if (individuals[i]->getFitness( ) < individuals[weakestIndividualID]->getFitness( ))
+            weakestIndividualID = i;
     }
+
+    if (initChromosome != NULL)
+        delete initChromosome;
+
+    if (postMutation)
+        delete postMutation;
+
+    if (postRepair)
+        delete postRepair;
 
     cout << "Population generated..." << endl;
-}
-
-Chromosome * Population::mutate(int individualID) {
-    cout << "Mutating Individual: " << individualID << endl;
-    Chromosome * mutatedChromosome = new Chromosome(individuals[individualID]);
-
-    for (int g = 0; g < section_count; g++) {
-        int creditRow = 0, timeID = -1, compTimes = -1, profID = -1, compProfs = -1;
-
-        compProfs = sectionProf[g][0];
-        profID = mutatedChromosome->getProf(g);
-
-        while (timeSlots[creditTimeSlot[creditRow][1]]->getCredits( ) != timeSlots[mutatedChromosome->getTime(g)]->getCredits( ))
-            creditRow++;
-        compTimes = creditTimeSlot[creditRow][0];
-        timeID = mutatedChromosome->getTime(g);
-
-        int mutationTime = h.randNum(1, 100);
-        if (mutationTime <= (int) (mutation_probability * 100)) {
-            timeID = h.randNum(1, compTimes);
-            mutatedChromosome->setTime(g, creditTimeSlot[creditRow][timeID]);
-        }
-
-        int mutationProf = h.randNum(1, 100);
-        if (mutationProf <= (int) (mutation_probability * 100)) {
-            profID = h.randNum(1, compProfs);
-            mutatedChromosome->setProf(g, sectionProf[g][profID]);
-        }
-    }
-
-    cout << "Finished Mutating." << endl;
-    return mutatedChromosome;
-}
-
-Chromosome * Population::repairChromosome(Chromosome * broken) {
-    /*
-    Do a loop for maximum of REPAIR_TRIES. Each time keep a boolean
-    that will keep track of whether repairs were made or not. If
-    after an iteration no repairs have been made, then the individual
-    is good and repair is complete.
-
-    To perform repair, follow the taboo list principle. Do a look
-    ahead to see if there is anything that will hard conflict with the
-    current gene. If it will, replace the gene with other options, and
-    put the current values into the taboo list. Only look for genes on
-    the left that will conflict, don't worry about what we have already
-    seen.
-
-    If an individual cannot be repaired, ignore it. It will probably
-    not replace anything as the fitness will be much lower for it. If
-    it replaces anything, than it was probably for the best.
-    */
-
-    bool currentIterationRepaired = false;
-
-    int tries = 0;
-
-    vector<int> * tabooProf = new vector<int>[section_count];
-    vector<int> * tabooTime = new vector<int>[section_count];
-    //We want to go through the Chromosome, at least once.
-    do {
-        for (int secIndex = 0; secIndex < section_count; secIndex++) {
-            Gene left = broken->getGene(secIndex);
-            Gene right;
-            for (int conflictSection = 1; conflictSection <= incompatibleSections[secIndex][0]; conflictSection++) {
-                int conflictID = incompatibleSections[secIndex][conflictSection];
-
-                //We want to ensure that this is a look ahead search. Hence, if the conflicting section is
-                //On the left of the current section, skip this iteration.
-                if (conflictID < secIndex)
-                    continue;
-                right = broken->getGene(conflictID);
-
-                //Check if time and prof conflict. In that case, switch prof
-                if (left.getTimeID( ) == right.getTimeID( ) && left.getProfID( ) == right.getProfID( )) {
-                    cout << "Time and Prof Collision for " << left.getTimeID( ) << " and " << right.getTimeID( ) << endl;
-                    currentIterationRepaired = true;
-
-                    //Add the professor to the prof taboo list for the conflicting section
-                    tabooProf[conflictID].push_back(right.getTimeID( ));
-                    
-                    int compProfs = sectionProf[conflictID][0]; 
-
-                    //We want to only loop as many times as the possible professors that we have.
-                    int looped = compProfs;
-                    do {
-                        //Get a random professor from the list of valid profs.
-                        int profID = sectionProf[conflictID][h.randNum(1, compProfs)];
-
-                        //Check if the new prof selected is in the taboo list.
-                        if (find(tabooProf->begin( ), tabooProf->end( ), profID) == tabooProf->end( )) {
-                            //If the prof is not in the taboo list, set it as the new prof and break out of the loop.
-                            right.setProfID(profID);
-                            break;
-                        }
-                    } while (--looped >= 0);
-
-                } else if (left.getTimeID( ) == right.getTimeID( )) {
-                    //Add the current time to the taboo list for time for the conflicting section
-                    tabooTime[conflictID].push_back(right.getTimeID( ));
-
-                    int timeRow = 0;
-                    //Look for the time row with the correct credit rating.
-                    while (timeSlots[creditTimeSlot[timeRow][0]]->getCredits( ) != timeSlots[right.getTimeID( )]->getCredits( ))
-                        timeRow++;
-
-                    int compTimes = creditTimeSlot[timeRow][0];
-
-                    //We only want to loop as many times as the possible timeslots that can accomodate this section
-                    int looped = compTimes;
-                    do {
-                        //Get a random time from the list timeslots for the given number of credits.
-                        int timeID = creditTimeSlot[timeRow][h.randNum(1, compTimes)];
-
-                        //Check if the time is in the taboo list or not.
-                        if (find(tabooTime->begin( ), tabooTime->end( ), timeID) == tabooTime->end( )) {
-                            right.setTimeID(timeID);
-                            break;
-                        }
-
-                    } while (--looped >= 0);
-                }
-                broken->setGene(conflictID, right);
-            }
-        }
-        cout << tries << "Any Repairs? " << currentIterationRepaired << endl;
-    } while (++tries < REPAIR_TRIES && currentIterationRepaired);
-    //cout << "Repaird: " << broken->print( ) << endl;
-    cout << "Gene Repaired to the best of the abilities..." << endl;
-    return broken;
 }
 
 bool Population::validateChromosome(Chromosome *toValidate) {
@@ -516,7 +409,8 @@ bool Population::validateChromosome(Chromosome *toValidate) {
             if (leftProf == rightProf) {
                 int leftTime = toValidate->getTime(left), rightTime = toValidate->getTime(right);
                 if (leftTime == rightTime) {
-                    cout << "Incompatible Prof: " << left << " with " << right << endl;
+                    if (DEBUG_VALIDATE)
+                        cout << "Incompatible Prof: " << left << " with " << right << endl;
                     valid = false;
                     break;
                 }
@@ -529,7 +423,8 @@ bool Population::validateChromosome(Chromosome *toValidate) {
         for (int right = 1; right <= incompatibleSections[left][0] && valid; right++) {
             int rightTime = toValidate->getTime(incompatibleSections[left][right]);
             if (leftTime == rightTime) {
-                cout << "Incompatible Sections: " << left << " with " << right - 1 << endl;
+                if (DEBUG_VALIDATE)
+                    cout << "Incompatible Sections: " << left << " with " << right - 1 << endl;
                 valid = false;
                 break;
             }
@@ -538,4 +433,60 @@ bool Population::validateChromosome(Chromosome *toValidate) {
 
 
     return valid;
+}
+
+void Population::Evolve( ) {
+    int generationSinceLastReplacement = 0;
+    for (int i = 1; i <= generation_count && generationSinceLastReplacement < replacementWait; i++) {
+        cout << "Current Generation: " << i << endl;
+        cout << "Generations since last replacement: " << generationSinceLastReplacement << endl << endl;
+        int sacrificeID = h.randNum(0, population_size - 1);
+        Chromosome * sacrifice = new Chromosome(individuals[sacrificeID]);
+
+        if (DEBUG_EVOLVE) {
+            for (int i = 0; i < population_size; i++)
+                cout << individuals[i]->print( ) << endl << "************************************" << endl;
+            cout << "Sacrifice source: " << sacrificeID << endl;
+            cout << "Sacrifice: " << endl << sacrifice->print( ) << "Source: " << endl << individuals[sacrificeID]->print( ) << endl;
+        }
+
+        sacrifice->mutate(sectionProf, section_count, creditTimeSlot, timeSlots, &h, mutation_probability);
+        sacrifice->repair(sectionProf, section_count, creditTimeSlot, timeSlots, &h, incompatibleSections, REPAIR_TRIES);
+        sacrifice->updateFitness(incompatibleSections);
+        if (sacrifice->getFitness( ) > individuals[weakestIndividualID]->getFitness( )) {
+            generationSinceLastReplacement = 0;
+            //delete individuals[weakestIndividualID];
+            if (DEBUG_EVOLVE) {
+                cout << "Replacing " << weakestIndividualID << " with the sacrifice." << endl;
+                cout << "Original\t\tNew" << endl;
+                for (int i = 0; i < section_count; i++)
+                    cout << individuals[weakestIndividualID]->print(i) << "  ->  " << sacrifice->print(i) << endl;
+
+                cout << "New weakest: " << endl;
+            }
+
+            individuals[weakestIndividualID] = new Chromosome(sacrifice);
+
+            if (DEBUG_EVOLVE)
+                cout << individuals[weakestIndividualID]->print( );
+
+            weakestIndividualID = 0;
+            for (int i = 0; i < population_size; i++) {
+                if (individuals[i]->getFitness( ) < individuals[weakestIndividualID]->getFitness( )) {
+                    weakestIndividualID = i;
+                }
+            }
+        } else
+            generationSinceLastReplacement++;
+
+        if (DEBUG_EVOLVE) {
+            /*cout << "Current State" << endl;
+            for (int i = 0; i < population_size; i++) {
+                cout << "Individual " << i << endl;
+                cout << individuals[i]->print( );
+            }
+            cout << "-----------------------------------------------------------" << endl;*/
+        }
+        //delete sacrifice;
+    }
 }

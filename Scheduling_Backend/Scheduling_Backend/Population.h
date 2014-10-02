@@ -6,9 +6,11 @@
 #define DEBUG_COURSES 0
 #define DEBUG_PROF 0
 #define DEBUG_TIMESLOT 0
-#define DEBUG_INIT_CHROMOSOME 1
+#define DEBUG_INIT_CHROMOSOME 0
 #define DEBUG_INIT_POPULATION 0
-#define DEBUG_INIT_POPULATION_COMPARED 1
+#define DEBUG_INIT_POPULATION_COMPARED 0
+#define DEBUG_VALIDATE 0
+#define DEBUG_EVOLVE 1
 
 #include "Chromosome.h"
 #include "TimeSlot.h"
@@ -21,23 +23,28 @@
 #include <vector>
 using namespace std;
 
+class Chromosome;
+
 class Population {
 public:
-    Population(string dataFilePath, int populationSize, int generationCount, double mutationProbability);
+    Population(string dataFilePath, int populationSize, int generationCount, int _replacementWait, double mutationProbability);
     ~Population( );
 private:
     string data_file_path;
     int population_size;
     int generation_count;
+    int replacementWait;
     double mutation_probability;
     int section_count;
     int courseCount;
     int professorCount;
     int timeSlotCount;
     int creditCount;
+    int weakestIndividualID;
     const int REPAIR_TRIES = 5;
     Helper h;
     Chromosome **individuals;
+    Chromosome * currentIndividual;
     TimeSlot ** timeSlots;
     int ** incompatibleSections;
     int ** creditTimeSlot;
@@ -54,10 +61,9 @@ private:
     void readInitialSchedule( );
     void initPopulationFromFirst( );
 
-    Chromosome * mutate(int individualID);
-    Chromosome * repairChromosome(Chromosome * borken);
     bool validateChromosome(Chromosome *toValidate);
 
+    void Evolve( );
 };
 
 #endif

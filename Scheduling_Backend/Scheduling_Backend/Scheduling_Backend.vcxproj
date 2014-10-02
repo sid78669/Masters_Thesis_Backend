@@ -69,8 +69,6 @@
     <ClInclude Include="Gene.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="Population.h" />
-    <ClInclude Include="TimeChromosome.h" />
-    <ClInclude Include="TimeGene.h" />
     <ClInclude Include="TimeSlot.h" />
     <ClInclude Include="Utility.h" />
   </ItemGroup>
@@ -79,8 +77,6 @@
     <ClCompile Include="Gene.cpp" />
     <ClCompile Include="Population.cpp" />
     <ClCompile Include="Scheduler.cpp" />
-    <ClCompile Include="TimeChromosome.cpp" />
-    <ClCompile Include="TimeGene.cpp" />
     <ClCompile Include="TimeSlot.cpp" />
   </ItemGroup>
   <ItemGroup>

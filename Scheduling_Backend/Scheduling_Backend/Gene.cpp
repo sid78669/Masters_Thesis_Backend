@@ -11,11 +11,13 @@ Gene::~Gene( ) {
 }
 
 void Gene::setProfID(int prof) {
-    profID = prof;
+    if (prof > -1)
+        profID = prof;
 }
 
 void Gene::setTimeID(int time) {
-    timeID = time;
+    if (time > -1)
+        timeID = time;
 }
 
 int Gene::getProfID( ) {
@@ -24,4 +26,9 @@ int Gene::getProfID( ) {
 
 int Gene::getTimeID( ) {
     return timeID;
+}
+
+ostream& operator<<(ostream &out, Gene &g) {
+    out << g.timeID << "," << g.profID;
+    return out;
 }

@@ -26,7 +26,7 @@ public:
         std::uniform_int_distribution<> random(min, max);
         return random(rand_gen);
     }
-
+    
     inline double randDouble(double min, double max) {
         std::uniform_real_distribution<> random(min, max);
         return random(rand_gen);

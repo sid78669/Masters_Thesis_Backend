@@ -2,6 +2,7 @@
 #define GENE_H
 
 #include <string>
+#include <iostream>
 using namespace std;
 
 class Gene {
@@ -17,6 +18,8 @@ public:
 private:
     int profID;
     int timeID;
+
+    friend ostream& operator<<(ostream &out, Gene &g);
 };
 
 #endif
