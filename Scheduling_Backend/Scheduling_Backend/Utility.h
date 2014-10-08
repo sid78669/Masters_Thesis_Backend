@@ -3,11 +3,12 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
 using namespace std;
 class Utility {
 
 public:
-    static void CleanWhiteSpace(string & toClean) {
+    static void CleanWhiteSpace(string &toClean) {
         while (toClean.find(" ") != string::npos) {
             toClean.replace(toClean.find(" "), 1, "");
         }
@@ -18,7 +19,7 @@ public:
 
     }
 
-    static void LowerCase(string & toLower) {
+    static void LowerCase(string &toLower) {
         int len = toLower.length( );
         for (int i = 0; i < len; i++) {
             if (toLower[i] > 64 && toLower[i] < 91)
@@ -38,6 +39,10 @@ public:
         if (!toTokenize.empty( ))
             tokenList.push_back(toTokenize);
         return tokenList;
+    }
+
+    static void RemoveChar(string &str, char toRemove) {
+        str.erase(std::remove(str.begin( ), str.end( ), toRemove), str.end( ));
     }
 };
 

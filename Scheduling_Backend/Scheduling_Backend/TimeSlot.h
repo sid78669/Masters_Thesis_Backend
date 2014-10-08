@@ -13,7 +13,8 @@ public:
 
     
     TimeSlot(double);
-    TimeSlot(TimeSlot*&);
+    TimeSlot(const TimeSlot*&);
+    TimeSlot(const TimeSlot &);
     ~TimeSlot( );
         
     void setPeriod(int, string);
@@ -21,12 +22,18 @@ public:
     
     double getCredits( );
     bool isOverlap(TimeSlot);
+    bool isMorning();
+    bool isAfternoon();
 
     string print( );
+
     friend ostream& operator<<(ostream&, const TimeSlot&);
 private:
     Period days[6];
     double credits;
+    bool morning;
+    bool afternoon;
+    bool timeUnset;
     string dayTitle[6];// = { "M", "T", "W", "R", "F", "S" };
 };
 

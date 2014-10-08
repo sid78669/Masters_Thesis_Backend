@@ -19,8 +19,9 @@ class Chromosome {
 public:
     Chromosome(int geneLength);
     Chromosome(const Chromosome *);
+    Chromosome(const Chromosome &);
     ~Chromosome( );
-    //Chromosome& operator=(const Chromosome &source);
+    Chromosome& operator=(const Chromosome &source);
 
     void setTime(int geneID, int newTime);
     void setProf(int geneID, int newProf);

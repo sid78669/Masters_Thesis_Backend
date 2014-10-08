@@ -64,6 +64,9 @@
     <None Include="init.dat">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="inputFiles.dat">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="courses.dat">

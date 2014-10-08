@@ -10,7 +10,8 @@
 #define DEBUG_INIT_POPULATION 0
 #define DEBUG_INIT_POPULATION_COMPARED 0
 #define DEBUG_VALIDATE 0
-#define DEBUG_EVOLVE 1
+#define DEBUG_EVOLVE 0
+#define DEBUG_INIT 0
 
 #include "Chromosome.h"
 #include "TimeSlot.h"
@@ -27,43 +28,45 @@ class Chromosome;
 
 class Population {
 public:
-    Population(string dataFilePath, int populationSize, int generationCount, int _replacementWait, double mutationProbability);
+    Population(string dataFilePath, int populationSize, int generationCount, int replacementWait, double mutationProbability);
+    void Evolve( );
     ~Population( );
+    friend ostream & operator<<(ostream & os, const Population &source);
 private:
     string data_file_path;
     int population_size;
     int generation_count;
-    int replacementWait;
+    int replacement_wait;
     double mutation_probability;
     int section_count;
-    int courseCount;
-    int professorCount;
-    int timeSlotCount;
-    int creditCount;
+    int course_count;
+    int professor_count;
+    int timeslot_count;
+    int credit_count;
     int weakestIndividualID;
     const int REPAIR_TRIES = 5;
     Helper h;
     Chromosome **individuals;
-    Chromosome * currentIndividual;
     TimeSlot ** timeSlots;
     int ** incompatibleSections;
     int ** creditTimeSlot;
     int ** sectionProf;
     int ** courseSection;
     double * sectionCredit;
+    int ** sectionPref;
+    int ** profPref;
 
 
     void readDatFiles( );
-    void readSectionList(vector<string> &);
-    void readCourseList(vector<string> );
-    void readProfessorList(vector<string> ); 
-    void readTimeSlotList( );
-    void readInitialSchedule( );
-    void initPopulationFromFirst( );
-
+    void readSectionList(ifstream &input, vector<string> &);
+    void readCourseList(ifstream &input, vector<string>);
+    void readProfessorList(ifstream &input, vector<string>);
+    void readTimeSlotList(ifstream &input);
+    void readInitialSchedule(ifstream &input);
+    void initPopulationFromFirst();
+    void readCoursePref(ifstream &input, vector<string>);
+    void readProfPref(ifstream &input);
     bool validateChromosome(Chromosome *toValidate);
-
-    void Evolve( );
 };
 
 #endif

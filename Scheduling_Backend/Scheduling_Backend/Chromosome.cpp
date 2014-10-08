@@ -16,22 +16,32 @@ Chromosome::Chromosome(const Chromosome * other) {
     }
 }
 
-//Chromosome& Chromosome::operator=(const Chromosome &source) {
-//    gene_length = source.gene_length;
-//    genes = new Gene[gene_length];
-//    fitness = source.fitness;
-//    for (int i = 0; i < gene_length; i++) {
-//        setGene(i, source.genes[i]);
-//    }
-//
-//    if (DEBUG_ASSIGNMENT) {
-//        cout << "source\t\tcurrent" << endl;
-//        for (int i = 0; i < gene_length; i++) {
-//            cout << source.genes[i] << "\t\t\t" << this->genes[i] << endl;
-//        }
-//    }
-//    return *this;
-//}
+Chromosome::Chromosome(const Chromosome &source) {
+    cout << "Overloaded Copy Constructor" << endl;
+    gene_length = source.gene_length;
+    genes = new Gene[gene_length];
+    fitness = source.fitness;
+    for (int i = 0; i < gene_length; i++) {
+        setGene(i, source.genes[i]);
+    }
+}
+
+Chromosome& Chromosome::operator=(const Chromosome &source) {
+    gene_length = source.gene_length;
+    genes = new Gene[gene_length];
+    fitness = source.fitness;
+    for (int i = 0; i < gene_length; i++) {
+        setGene(i, source.genes[i]);
+    }
+
+    if (DEBUG_ASSIGNMENT) {
+        cout << "source\t\tcurrent" << endl;
+        for (int i = 0; i < gene_length; i++) {
+            cout << source.genes[i] << "\t\t\t" << this->genes[i] << endl;
+        }
+    }
+    return *this;
+}
 
 
 Chromosome::~Chromosome( ) {
@@ -216,9 +226,9 @@ void Chromosome::repair(int ** sectionProf, int section_count, int ** creditTime
 
 void Chromosome::updateFitness(int ** incompatibleSections) {
     fitness = 100000;
-    cout << gene_length;
+    //cout << gene_length;
     for (int left = 0; left < gene_length; left++) {
-        if(left == 0)
+        if(left < 0)
             cout << "Inside loop: " << gene_length;
         int leftProf = genes[left].getProfID( );
         for (int right = left + 1; right < gene_length; right++) {
@@ -235,7 +245,7 @@ void Chromosome::updateFitness(int ** incompatibleSections) {
     }
 
     for (int left = 0; left < gene_length; left++) {
-        if (left == 0)
+        if (left < 0)
             cout << "Inside loop2: " << gene_length;
         int leftTime = genes[left].getTimeID( );
         for (int right = 1; right <= incompatibleSections[left][0]; right++) {
@@ -250,8 +260,6 @@ void Chromosome::updateFitness(int ** incompatibleSections) {
 
     if (DEBUG_FITNESS)
         cout << "Current Fitness: " << fitness << endl;
-
-    cout << " Post Fitness: " << gene_length << endl;
 }
 
 bool operator==(Chromosome &ch1, Chromosome &ch2) {
