@@ -24,6 +24,8 @@ public:
     bool isOverlap(TimeSlot);
     bool isMorning();
     bool isAfternoon();
+    int getStartQuarter(int day);
+    int getEndQuarter(int day);
 
     string print( );
 

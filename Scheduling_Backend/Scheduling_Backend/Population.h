@@ -12,6 +12,7 @@
 #define DEBUG_VALIDATE 0
 #define DEBUG_EVOLVE 0
 #define DEBUG_INIT 0
+#define DEBUG_PRINTTABLE 1
 
 #include "Chromosome.h"
 #include "TimeSlot.h"
@@ -30,6 +31,7 @@ class Population {
 public:
     Population(string dataFilePath, int populationSize, int generationCount, int replacementWait, double mutationProbability);
     void Evolve( );
+    string PrintTableFormat( );
     ~Population( );
     friend ostream & operator<<(ostream & os, const Population &source);
 private:
@@ -55,6 +57,7 @@ private:
     double * sectionCredit;
     int ** sectionPref;
     int ** profPref;
+    bool * individualValidity;
 
 
     void readDatFiles( );
@@ -67,6 +70,7 @@ private:
     void readCoursePref(ifstream &input, vector<string>);
     void readProfPref(ifstream &input);
     bool validateChromosome(Chromosome *toValidate);
+    string validatePrint(int i);
 };
 
 #endif

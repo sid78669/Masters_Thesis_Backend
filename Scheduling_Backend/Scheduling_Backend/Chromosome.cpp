@@ -110,13 +110,19 @@ void Chromosome::mutate(int ** sectionProf, int section_count, int ** creditTime
 
         int mutationTime = h->randNum(1, 100);
         if (mutationTime <= (int) (mutation_probability * 100)) {
-            timeID = h->randNum(1, compTimes);
+            if (compTimes != 1)
+                timeID = h->randNum(1, compTimes);
+            else
+                timeID = 1;
             setTime(g, creditTimeSlot[creditRow][timeID]);
         }
 
         int mutationProf = h->randNum(1, 100);
         if (mutationProf <= (int) (mutation_probability * 100)) {
-            profID = h->randNum(1, compProfs);
+            if (compProfs != 1)
+                profID = h->randNum(1, compProfs);
+            else
+                profID = 1;
             setProf(g, sectionProf[g][profID]);
         }
     }
@@ -178,7 +184,12 @@ void Chromosome::repair(int ** sectionProf, int section_count, int ** creditTime
                     int looped = compProfs;
                     do {
                         //Get a random professor from the list of valid profs.
-                        int profID = sectionProf[right][h->randNum(1, compProfs)];
+                        int profID = -1;
+                        if (compProfs == 1) {
+                            profID = sectionProf[right][1];
+                        } else {
+                            profID = sectionProf[right][h->randNum(1, compProfs)];
+                        }
 
                         //Check if the new prof selected is in the taboo list.
                         if (find(tabooProf->begin( ), tabooProf->end( ), profID) == tabooProf->end( )) {
@@ -203,7 +214,11 @@ void Chromosome::repair(int ** sectionProf, int section_count, int ** creditTime
                     int looped = compTimes;
                     do {
                         //Get a random time from the list timeslots for the given number of credits.
-                        int timeID = creditTimeSlot[timeRow][h->randNum(1, compTimes)];
+                        int timeID = -1;
+                        if (compTimes != 1) {
+                            timeID = creditTimeSlot[timeRow][h->randNum(1, compTimes)];
+                        } else
+                            timeID = creditTimeSlot[timeRow][1];
 
                         //Check if the time is in the taboo list or not.
                         if (find(tabooTime->begin( ), tabooTime->end( ), timeID) == tabooTime->end( )) {
@@ -224,9 +239,10 @@ void Chromosome::repair(int ** sectionProf, int section_count, int ** creditTime
         cout << "Gene Repaired to the best of the abilities..." << endl;
 }
 
-void Chromosome::updateFitness(int ** incompatibleSections) {
-    fitness = 100000;
-    //cout << gene_length;
+void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots) {
+    fitness = 10000;
+    
+    //Check for hard constraint violation for professor
     for (int left = 0; left < gene_length; left++) {
         if(left < 0)
             cout << "Inside loop: " << gene_length;
@@ -237,30 +253,131 @@ void Chromosome::updateFitness(int ** incompatibleSections) {
                 int leftTime = genes[left].getTimeID( ), rightTime = genes[right].getTimeID( );
                 if (leftTime == rightTime) {
                     if (DEBUG_FITNESS)
-                        cout << "Incompatible Prof & Time: " << left << " with " << right << endl;
-                    fitness -= 100;
+                        cout << "Incompatible Prof Time: " << left << " with " << right << endl;
+                    fitness -= 200;
                 }
             }
         }
     }
 
+    //Check for hard constraint violation for time conflict
     for (int left = 0; left < gene_length; left++) {
         if (left < 0)
             cout << "Inside loop2: " << gene_length;
         int leftTime = genes[left].getTimeID( );
         for (int right = 1; right <= incompatibleSections[left][0]; right++) {
+            if (incompatibleSections[left][right] <= left)
+                continue;
             int rightTime = genes[incompatibleSections[left][right]].getTimeID( );
             if (leftTime == rightTime) {
                 if (DEBUG_FITNESS)
                     cout << "Incompatible Time: " << left << " with " << right << endl;
-                fitness -= 80;
+                fitness -= 100;
             }
         }
+    }
+
+    //Check for soft constraint for prof time preference.
+    for (int secID = 0; secID < gene_length; secID++) {
+        int timeAlloted = timeSlots[genes[secID].getTimeID( )]->isMorning( ) ? 0 : (timeSlots[genes[secID].getTimeID( )]->isAfternoon( ) ? 1 : 2);
+        fitness -= profPref[genes[secID].getProfID( )][timeAlloted] * 10;
+    }
+
+    //Check for soft constraint for section time preference.
+    for (int secID = 0; secID < gene_length; secID++) {
+        int timeAlloted = timeSlots[genes[secID].getTimeID( )]->isMorning( ) ? 0 : (timeSlots[genes[secID].getTimeID( )]->isAfternoon( ) ? 1 : 2);
+        fitness -= sectionPref[secID][timeAlloted];
     }
 
     if (DEBUG_FITNESS)
         cout << "Current Fitness: " << fitness << endl;
 }
+
+string Chromosome::printTable( TimeSlot ** timeSlots, int timeslot_count) {
+    const int columnWidth = 12;
+    const int hlineWidth = (columnWidth + 1) * 7;
+    const char seperator = ' ';
+    int hour = 800;
+    string rtnVal = "";
+    vector<PeriodData> * days = new vector<PeriodData>[6];
+    rtnVal += printHLine(hlineWidth); 
+    rtnVal += printHeader( ) + "\n";
+    char row = 'a' - 1;
+    
+    for (int i = 0; i < 56; ++i) {
+        rtnVal += printHLine(hlineWidth);
+        string columnHeader = "";
+        if (i % 4 == 0) {
+            row++;
+            if (hour >= 1000)
+                columnHeader = to_string(hour);
+            else
+                columnHeader = "0" + to_string(hour);
+            hour += 100;
+        } 
+
+        columnHeader.resize(columnWidth, ' ');
+        rtnVal += columnHeader + "|";
+        
+        string columnVal = "";
+        char colChar = 'A' - 1;
+        for (int col = 0; col < 6; ++col) {
+            columnVal = to_string(i) + ":" + to_string(col) + "# " + row + "%" + ++colChar + "" + to_string((i % 4));
+            columnVal.resize(columnWidth, ' ');
+            columnVal += "|";
+            rtnVal += columnVal;
+        }
+        
+        rtnVal += "\n";
+    }
+    rtnVal += printHLine(hlineWidth);
+    return rtnVal;
+}
+
+string Chromosome::printHeader( ) {
+    const int columnWidth = 12;
+    const char seperator = ' ';
+
+    string rtnVal = "", currVal = "";
+
+    currVal = " Time";
+    currVal.resize(columnWidth, ' ');
+    rtnVal += currVal + "|";
+
+    currVal = " Monday";
+    currVal.resize(columnWidth, ' ');
+    rtnVal += currVal + "|";
+
+    currVal = " Tuesday";
+    currVal.resize(columnWidth, ' ');
+    rtnVal += currVal + "|";
+
+    currVal = " Wednesday";
+    currVal.resize(columnWidth, ' ');
+    rtnVal += currVal + "|";
+
+    currVal = " Thursday";
+    currVal.resize(columnWidth, ' ');
+    rtnVal += currVal + "|";
+
+    currVal = " Friday";
+    currVal.resize(columnWidth, ' ');
+    rtnVal += currVal + "|";
+
+    currVal = " Saturday";
+    currVal.resize(columnWidth, ' ');
+    rtnVal += currVal + "|";
+        
+    return rtnVal;
+}
+
+string Chromosome::printHLine(int lineWidth) {
+    string rtnVal = "";
+    rtnVal.resize(lineWidth, '-');
+    rtnVal += "\n";
+    return rtnVal;
+}
+
 
 bool operator==(Chromosome &ch1, Chromosome &ch2) {
     if (ch1.gene_length != ch2.gene_length)

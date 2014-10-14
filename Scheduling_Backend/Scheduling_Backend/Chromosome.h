@@ -9,7 +9,9 @@
 #include "Gene.h"
 #include "Helper.h"
 #include "TimeSlot.h"
+#include "PeriodData.h"
 #include <iostream>
+#include <iomanip>
 
 using namespace std;
 class Population;
@@ -35,17 +37,20 @@ public:
 
     string print( );
     string print(int gene);
+    string printTable(TimeSlot ** timeSlots, int timeslot_count);
 
     void mutate(int ** sectionProf, int section_count, int ** creditTimeSlot, TimeSlot ** timeSlots, Helper * h, double mutation_probability );
     void repair(int ** sectionProf, int section_count, int ** creditTimeSlot, TimeSlot ** timeSlots, Helper * h, int ** incompatibleSections, const int REPAIR_TRIES);
-    void updateFitness(int ** incompatibleSections );
+    void updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots );
 
     friend bool operator==(Chromosome &ch1, Chromosome &ch2);
+
 private:
     Gene *genes;
     int gene_length;
     int fitness;
-
+    string printHeader( );
+    string printHLine(int width);
 };
 
 #endif

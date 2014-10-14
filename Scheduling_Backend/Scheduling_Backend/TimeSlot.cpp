@@ -113,6 +113,30 @@ string TimeSlot::print( ) {
     return rtnVal;
 }
 
+int TimeSlot::getStartQuarter(int day) {
+    int mins = days[day].startTime % 100;
+    if (mins >= 0 && mins <= 15)
+        return 0;
+    else if (mins >= 16 && mins <= 30)
+        return 1;
+    else if (mins >= 31 && mins <= 45)
+        return 2;
+    else
+        return 3;
+}
+
+int TimeSlot::getEndQuarter(int day) {
+    int mins = days[day].endTime % 100;
+    if (mins >= 0 && mins <= 15)
+        return 0;
+    else if (mins >= 16 && mins <= 30)
+        return 1;
+    else if (mins >= 31 && mins <= 45)
+        return 2;
+    else
+        return 3;
+}
+
 ostream& operator<<(ostream& os, const TimeSlot& ts) {
     os << ts.credits << ": ";
     for (int i = 0; i < 6; i++) {

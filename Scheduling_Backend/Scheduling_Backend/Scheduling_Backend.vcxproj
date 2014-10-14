@@ -68,6 +68,7 @@
     <ClInclude Include="Chromosome.h" />
     <ClInclude Include="Gene.h" />
     <ClInclude Include="Helper.h" />
+    <ClInclude Include="PeriodData.h" />
     <ClInclude Include="Population.h" />
     <ClInclude Include="TimeSlot.h" />
     <ClInclude Include="Utility.h" />
