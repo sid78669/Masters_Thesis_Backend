@@ -1,15 +1,18 @@
 #include "Chromosome.h"
 
 
-Chromosome::Chromosome(int geneLength) {
+Chromosome::Chromosome(int geneLength, int profCount) {
     gene_length = geneLength;
     fitness = 0;
     genes = new Gene[geneLength];
+    prof_count = profCount;
+    professorCredits = new int[profCount];
 }
 
 Chromosome::Chromosome(const Chromosome * other) {
     gene_length = other->gene_length;
     genes = new Gene[gene_length];
+    professorCredits = new int[other->prof_count];
     fitness = other->fitness;
     for (int i = 0; i < gene_length; i++) {
         setGene(i, other->genes[i]);
@@ -53,8 +56,9 @@ void Chromosome::setTime(int geneID, int newTime) {
     genes[geneID].setTimeID(newTime);
 }
 
-void Chromosome::setProf(int geneID, int newProf) {
+void Chromosome::setProf(int geneID, int newProf, int oldCredits, int newCredits) {
     genes[geneID].setProfID(newProf);
+
 }
 
 void Chromosome::setGene(int geneID, Gene newGene) {
@@ -62,11 +66,11 @@ void Chromosome::setGene(int geneID, Gene newGene) {
     genes[geneID].setTimeID(newGene.getTimeID( ));
 }
 
-int Chromosome::getTime(int geneID) {
+const int Chromosome::getTime(int geneID) {
     return genes[geneID].getTimeID( );
 }
 
-int Chromosome::getProf(int geneID) {
+const int Chromosome::getProf(int geneID) {
     return genes[geneID].getProfID( );
 }
 
@@ -239,9 +243,10 @@ void Chromosome::repair(int ** sectionProf, int section_count, int ** creditTime
         cout << "Gene Repaired to the best of the abilities..." << endl;
 }
 
-void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots) {
-    fitness = 10000;
-    
+void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots, int prof_count, int timeslot_count, int * profSectionsTaught) {
+    fitness = MAX_FITNESS;
+    bool * profConflict = new bool[gene_length];
+    double numConflicts = 0;
     //Check for hard constraint violation for professor
     for (int left = 0; left < gene_length; left++) {
         if(left < 0)
@@ -254,8 +259,16 @@ void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref, 
                 if (leftTime == rightTime) {
                     if (DEBUG_FITNESS)
                         cout << "Incompatible Prof Time: " << left << " with " << right << endl;
-                    fitness -= 200;
-                }
+                    //Create penalty based on Max_Fitness divided by professor count.
+                    int penalty = MAX_FITNESS / (prof_count);
+                    //Increase the penalty based on the number of sections being taught by the prof.
+                    if (profSectionsTaught[leftProf] >((gene_length*1.0) / prof_count));
+                    penalty *= profSectionsTaught[leftProf];
+                    numConflicts++;
+                    fitness -= penalty;
+                    profConflict[left] = true;
+                } else
+                    profConflict[left] = false;
             }
         }
     }
@@ -272,21 +285,29 @@ void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref, 
             if (leftTime == rightTime) {
                 if (DEBUG_FITNESS)
                     cout << "Incompatible Time: " << left << " with " << right << endl;
-                fitness -= 100;
+                if (!profConflict[left]) {
+                    int penalty = MAX_FITNESS / (prof_count);
+                    if (incompatibleSections[left][0] > 2)
+                        penalty *= incompatibleSections[left][0];
+                    numConflicts++;
+                    fitness -= penalty;
+                }
+                else
+                    fitness -= MAX_FITNESS;
             }
         }
     }
-
+    fitness -= (numConflicts * (prof_count + gene_length));
     //Check for soft constraint for prof time preference.
     for (int secID = 0; secID < gene_length; secID++) {
         int timeAlloted = timeSlots[genes[secID].getTimeID( )]->isMorning( ) ? 0 : (timeSlots[genes[secID].getTimeID( )]->isAfternoon( ) ? 1 : 2);
-        fitness -= profPref[genes[secID].getProfID( )][timeAlloted] * 10;
+        fitness -= profPref[genes[secID].getProfID( )][timeAlloted] * MAX_FITNESS / (prof_count + gene_length);
     }
 
     //Check for soft constraint for section time preference.
     for (int secID = 0; secID < gene_length; secID++) {
         int timeAlloted = timeSlots[genes[secID].getTimeID( )]->isMorning( ) ? 0 : (timeSlots[genes[secID].getTimeID( )]->isAfternoon( ) ? 1 : 2);
-        fitness -= sectionPref[secID][timeAlloted];
+        fitness -= sectionPref[secID][timeAlloted] * MAX_FITNESS / (prof_count + gene_length);
     }
 
     if (DEBUG_FITNESS)
@@ -294,43 +315,18 @@ void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref, 
 }
 
 string Chromosome::printTable( TimeSlot ** timeSlots, int timeslot_count) {
-    const int columnWidth = 12;
-    const int hlineWidth = (columnWidth + 1) * 7;
-    const char seperator = ' ';
-    int hour = 800;
-    string rtnVal = "";
-    vector<PeriodData> * days = new vector<PeriodData>[6];
-    rtnVal += printHLine(hlineWidth); 
-    rtnVal += printHeader( ) + "\n";
-    char row = 'a' - 1;
-    
-    for (int i = 0; i < 56; ++i) {
-        rtnVal += printHLine(hlineWidth);
-        string columnHeader = "";
-        if (i % 4 == 0) {
-            row++;
-            if (hour >= 1000)
-                columnHeader = to_string(hour);
-            else
-                columnHeader = "0" + to_string(hour);
-            hour += 100;
-        } 
+    string rtnVal;
+    for (int i = 0; i < gene_length; i++) {
+        string sectionIDString = to_string(i);
+        sectionIDString.resize(5, ' ');
+        string profIDString = "(" + to_string(genes[i].getProfID( )) + ")";
+        profIDString.resize(5, ' ');
 
-        columnHeader.resize(columnWidth, ' ');
-        rtnVal += columnHeader + "|";
-        
-        string columnVal = "";
-        char colChar = 'A' - 1;
-        for (int col = 0; col < 6; ++col) {
-            columnVal = to_string(i) + ":" + to_string(col) + "# " + row + "%" + ++colChar + "" + to_string((i % 4));
-            columnVal.resize(columnWidth, ' ');
-            columnVal += "|";
-            rtnVal += columnVal;
-        }
-        
-        rtnVal += "\n";
+        rtnVal += sectionIDString + profIDString + ": " + timeSlots[genes[i].getTimeID( )]->print( ) + "\n";
     }
-    rtnVal += printHLine(hlineWidth);
+
+    rtnVal += "-------------------------------------------------------\n";
+
     return rtnVal;
 }
 

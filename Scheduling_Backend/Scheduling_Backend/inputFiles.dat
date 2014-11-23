@@ -33,18 +33,18 @@ cmpsc:472,  3.0, cmpsc:470, cmpsc:487W, cmpsc:421,
 cmpsc:487w, 3.0, cmpsc:470, cmpsc:472, cmpsc:421,
 *END*COURSE*
 //*START*PROFESSOR*
-//profid, courses[, courses]
-0 , cmpsc:101
-1 , cmpsc:121, cmpsc:221
-2 , cmpsc:121, cmpsc:101
-3 , cmpsc:121, cmpsc:200, cmpsc:122
-4 , cmpsc:221, cmpsc:470, cmpsc:122
-5 , cmpsc:200, cmpsc:360
-6 , cmpsc:200, cmpsc:360
-7 , cmpsc:360, cmpsc:200
-8 , cmpsc:412, cmpsc:421, cmpsc:444, cmpsc:462
-9 ,	cmpsc:472, cmpsc:487w, cmpsc:312
-10,	cmpsc:487w, cmpsc:472, cmpsc:312
+//profid, maxcredit, courses[, courses]
+0, 3, cmpsc:101
+1, 6, cmpsc:121, cmpsc:221
+2, 6, cmpsc:121, cmpsc:101
+3, 12, cmpsc:121, cmpsc:200, cmpsc:122
+4, 12, cmpsc:221, cmpsc:470, cmpsc:122
+5, 9, cmpsc:200, cmpsc:360
+6, 9, cmpsc:200, cmpsc:360
+7, 9, cmpsc:360, cmpsc:200
+8, 12, cmpsc:412, cmpsc:421, cmpsc:444, cmpsc:462
+9, 9, cmpsc:472, cmpsc:487w, cmpsc:312
+10, 9, cmpsc:487w, cmpsc:472, cmpsc:312
 *END*PROFESSOR*
 //*START*TIMESLOT*
 //timeslot_id	, credit rating, monday		, tuesday		, wednesday		, thursday		, friday		, saturday	

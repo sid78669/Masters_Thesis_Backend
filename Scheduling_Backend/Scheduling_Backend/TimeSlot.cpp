@@ -56,8 +56,7 @@ void TimeSlot::setPeriod(int day, string times) {
             morning = true;
             afternoon = false;
             timeUnset = true;
-        }
-        else if (start > 1200 && end < 1800) {
+        } else if (start > 1200 && end < 1800) {
             morning = false;
             afternoon = true;
             timeUnset = true;
@@ -100,15 +99,21 @@ bool TimeSlot::isAfternoon( ) {
     return afternoon;
 }
 
-string TimeSlot::print( ) {
-    string rtnVal = to_string(credits) + ": ";
+string TimeSlot::print(bool creditPrint) {
+    string rtnVal;
+    if (creditPrint) {
+        stringstream strCredits;
+        strCredits.precision(1);
+        strCredits << fixed << credits;
+        rtnVal = strCredits.str( ) + ": ";
+    } else
+        rtnVal = "";
 
     for (int i = 0; i < 6; i++) {
         if (days[i].startTime != -1) {
-            rtnVal += dayTitle[i] + "(" + to_string(days[i].startTime) + ":" + to_string(days[i].endTime) + ")";
+            rtnVal += dayTitle[i] + "(" + to_string(days[i].startTime) + ":" + to_string(days[i].endTime) + ") ";
         }
     }
-
 
     return rtnVal;
 }

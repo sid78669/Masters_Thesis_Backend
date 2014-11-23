@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 using namespace std;
 class TimeSlot {
 public:
@@ -27,7 +28,7 @@ public:
     int getStartQuarter(int day);
     int getEndQuarter(int day);
 
-    string print( );
+    string print(bool creditPrint = false);
 
     friend ostream& operator<<(ostream&, const TimeSlot&);
 private:

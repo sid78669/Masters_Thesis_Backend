@@ -3,7 +3,7 @@
 
 #define DEBUG_REPAIR 0
 #define DEBUG_FITNESS 0
-#define DEBUG_ASSIGNMENT 1
+#define DEBUG_ASSIGNMENT 0
 #define DEBUG_MUTATION 0
 
 #include "Gene.h"
@@ -13,24 +13,25 @@
 #include <iostream>
 #include <iomanip>
 
+#define MAX_FITNESS 1000
 using namespace std;
 class Population;
 class Helper;
 
 class Chromosome {
 public:
-    Chromosome(int geneLength);
+    Chromosome(int geneLength, int profCount);
     Chromosome(const Chromosome *);
     Chromosome(const Chromosome &);
     ~Chromosome( );
     Chromosome& operator=(const Chromosome &source);
 
     void setTime(int geneID, int newTime);
-    void setProf(int geneID, int newProf);
+    void setProf(int geneID, int newProf, int oldCredits, int newCredits);
     void setGene(int geneID, Gene);
 
-    int getTime(int geneID);
-    int getProf(int geneID);
+    const int getTime(int geneID);
+    const int getProf(int geneID);
     Gene* getGene(int geneID);
 
     int getFitness( );
@@ -41,13 +42,15 @@ public:
 
     void mutate(int ** sectionProf, int section_count, int ** creditTimeSlot, TimeSlot ** timeSlots, Helper * h, double mutation_probability );
     void repair(int ** sectionProf, int section_count, int ** creditTimeSlot, TimeSlot ** timeSlots, Helper * h, int ** incompatibleSections, const int REPAIR_TRIES);
-    void updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots );
+    void updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots, int prof_count, int timeslot_count, int * profSectionsTaught);
 
     friend bool operator==(Chromosome &ch1, Chromosome &ch2);
 
 private:
     Gene *genes;
+    int * professorCredits;
     int gene_length;
+    int prof_count;
     int fitness;
     string printHeader( );
     string printHLine(int width);
