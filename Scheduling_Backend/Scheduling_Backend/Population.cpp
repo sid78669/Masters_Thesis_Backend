@@ -13,7 +13,7 @@ Population::Population(string dataFilePath, int populationSize, int generationCo
     individuals = new Chromosome*[population_size];
     individualValidity = new bool[population_size];
     readDatFiles( );
-    
+
 }//end Constructor
 
 
@@ -82,8 +82,8 @@ void Population::readDatFiles( ) {
     //Output all individuals
     if (DEBUG_INIT)
         for (int i = 0; i < population_size; ++i) {
-        cout << "Individual " << i << endl;
-        cout << individuals[i]->print( );
+            cout << "Individual " << i << endl;
+            cout << individuals[i]->print( );
         }//end for
 
 
@@ -224,7 +224,7 @@ void Population::readProfessorList(ifstream &inFile, vector<string> courseList) 
 
     string currLine;
     vector<int> * secProfs = new vector<int>[section_count];
-    vector<int> maxCredits;
+    vector<double> maxCredits;
     vector<string> tokenizedVersion;
     if (inFile.is_open( )) {
         while (getline(inFile, currLine)) {
@@ -234,10 +234,10 @@ void Population::readProfessorList(ifstream &inFile, vector<string> courseList) 
                 break;
             Utility::CleanWhiteSpace(currLine);
             Utility::LowerCase(currLine);
-            
+
             tokenizedVersion = Utility::Tokenize(currLine, ',');
             tokenizedVersion.erase(tokenizedVersion.begin( ));
-            maxCredits.push_back(stoi(tokenizedVersion[0]));
+            maxCredits.push_back(stod(tokenizedVersion[0]));
             tokenizedVersion.erase(tokenizedVersion.begin( ));
             for (int courseLoc = 0; courseLoc < (signed) tokenizedVersion.size( ); ++courseLoc) {
                 int courseID = find(courseList.begin( ), courseList.end( ), tokenizedVersion.at(courseLoc)) - courseList.begin( );
@@ -252,11 +252,13 @@ void Population::readProfessorList(ifstream &inFile, vector<string> courseList) 
             professor_count++;
         }
         profSectionsTaught = new int[professor_count]( );
-        profCreditMax = new int[professor_count]( );
+        profCreditMax = new double[professor_count]( );
+        for (int z = 0; z < professor_count; z++) {
+            profCreditMax[z] = maxCredits[z];
+        }
         for (int i = 0; i < section_count; ++i) {
             if (DEBUG_PROF)
                 cout << i << "---" << endl;
-            profCreditMax[i] = maxCredits[i];
             sectionProf[i] = new int[secProfs[i].size( ) + 1];
             sectionProf[i][0] = secProfs[i].size( );
             int cntr = 1;
@@ -341,11 +343,12 @@ void Population::readTimeSlotList(ifstream &inFile) {
 }
 
 void Population::readInitialSchedule(ifstream &inFile) {
+    //TODO: Add the prof credit parameter
     cout << "Initiating First Chromosome..." << endl;
 
     vector<string> tokenizedVersion;
     string currLine;
-    individuals[0] = new Chromosome(section_count, professor_count);
+    individuals[0] = new Chromosome(section_count, professor_count, profCreditMax);
 
     int geneLocation = 0;
     if (inFile.is_open( )) {
@@ -359,7 +362,7 @@ void Population::readInitialSchedule(ifstream &inFile) {
             Utility::LowerCase(currLine);
             tokenizedVersion = Utility::Tokenize(currLine, ',');
 
-            individuals[0]->setProf(geneLocation, stoi(tokenizedVersion.at(1)));
+            individuals[0]->setProf(geneLocation, stoi(tokenizedVersion.at(1)), sectionCredit[geneLocation]);
             individuals[0]->setTime(geneLocation, stoi(tokenizedVersion.at(2)));
             geneLocation++;
         }
@@ -369,13 +372,16 @@ void Population::readInitialSchedule(ifstream &inFile) {
     individuals[0]->updateFitness(incompatibleSections, sectionPref, profPref, timeSlots, professor_count, timeslot_count, profSectionsTaught);
     weakestIndividualID = 0;
     lowestFitnessSeen = individuals[0]->getFitness( );
-    strongestIndividualID= 0;
+    strongestIndividualID = 0;
     highestFitnessSeen = individuals[0]->getFitness( );
+
+    cout << "Prof Rating: " << endl << individuals[0]->getProfessorLoads( ) << endl;
 
     cout << "First Chromosome Initialized..." << endl;
 }
 
 void Population::initPopulationFromFirst( ) {
+    //TODO: Add the prof credit routine.
     cout << "Initiating generation of population...." << endl;
 
     Chromosome * initChromosome = nullptr;
@@ -391,7 +397,7 @@ void Population::initPopulationFromFirst( ) {
         if (DEBUG_INIT_POPULATION)
             cout << "Pre-Mutation: " << endl << individuals[i]->print( );
 
-        individuals[i]->mutate(sectionProf, section_count, creditTimeSlot, timeSlots, &h, mutation_probability);
+        individuals[i]->mutate(sectionProf, section_count, creditTimeSlot, timeSlots, &h, mutation_probability, sectionCredit);
 
         postMutation = individuals[i];
 
@@ -399,7 +405,7 @@ void Population::initPopulationFromFirst( ) {
             cout << "Post-Mutation: " << endl << individuals[i]->print( ) << endl;
 
         //After mutation, repair.
-        individuals[i]->repair(sectionProf, section_count, creditTimeSlot, timeSlots, &h, incompatibleSections, REPAIR_TRIES);
+        individuals[i]->repair(sectionProf, section_count, creditTimeSlot, timeSlots, &h, incompatibleSections, REPAIR_TRIES, sectionCredit);
         postRepair = new Chromosome(individuals[i]);
 
         if (DEBUG_INIT_POPULATION)
@@ -416,8 +422,11 @@ void Population::initPopulationFromFirst( ) {
         }
         individuals[i]->updateFitness(incompatibleSections, sectionPref, profPref, timeSlots, professor_count, timeslot_count, profSectionsTaught);
         individualValidity[i] = validateChromosome(individuals[i]);
-        cout << i << " valid: " << individualValidity[i] << endl;
-        cout << "Fitness for " << i << " is " << individuals[i]->getFitness( ) << endl << endl;
+        if (DEBUG_INIT_POPULATION) {
+
+            cout << i << " valid: " << individualValidity[i] << endl;
+            cout << "Fitness for " << i << " is " << individuals[i]->getFitness( ) << endl << endl;
+        }
         if (individuals[i]->getFitness( ) < individuals[weakestIndividualID]->getFitness( )) {
             weakestIndividualID = i;
             lowestFitnessSeen = individuals[i]->getFitness( );
@@ -534,6 +543,11 @@ bool Population::validateChromosome(Chromosome * const toValidate) const {
         }
     }
 
+    for (int pr = 0; pr < professor_count; pr++) {
+        if (toValidate->getCourseLoad(pr) < 0)
+            valid = false;
+    }
+
     for (int left = 0; left < section_count && valid; ++left) {
         int leftTime = toValidate->getTime(left);
         for (int right = 1; right <= incompatibleSections[left][0] && valid; ++right) {
@@ -555,7 +569,7 @@ bool Population::validateChromosome(Chromosome * const toValidate) const {
 
 void Population::Evolve( ) {
     int generationSinceLastReplacement = 0;
-    
+
     int i = 1;
     for (i = 0; i <= generation_count && generationSinceLastReplacement < replacement_wait; ++i) {
         if (DEBUG_EVOLVE) {
@@ -581,10 +595,10 @@ void Population::Evolve( ) {
             cout << "Sacrifice: " << endl << sacrifice->print( ) << "Source: " << endl << individuals[sacrificeID]->print( ) << endl;
         }
 
-        sacrifice->mutate(sectionProf, section_count, creditTimeSlot, timeSlots, &h, mutation_probability);
-        sacrifice->repair(sectionProf, section_count, creditTimeSlot, timeSlots, &h, incompatibleSections, REPAIR_TRIES);
+        sacrifice->mutate(sectionProf, section_count, creditTimeSlot, timeSlots, &h, mutation_probability, sectionCredit);
+        sacrifice->repair(sectionProf, section_count, creditTimeSlot, timeSlots, &h, incompatibleSections, REPAIR_TRIES, sectionCredit);
         sacrifice->updateFitness(incompatibleSections, sectionPref, profPref, timeSlots, professor_count, timeslot_count, profSectionsTaught);
-        
+
         if (sacrifice->getFitness( ) > individuals[weakestIndividualID]->getFitness( )) {
             if (DEBUG_EVOLVE) {
                 if (DEBUG_EVOLVE && generationSinceLastReplacement > 1) {
@@ -620,7 +634,7 @@ void Population::Evolve( ) {
                     strongestIndividualID = i;
                 }
             }
-            
+
         } else
             generationSinceLastReplacement++;
 
@@ -633,7 +647,7 @@ void Population::Evolve( ) {
             cout << "-----------------------------------------------------------" << endl;
         }
         delete sacrifice;
-        
+
         if (i > 0 && ((i % 500 == 0)) || i == 1) {
             cout << i << ",";
             cout << GetFitnessData( );
@@ -666,7 +680,7 @@ string Population::GetFitnessData( ) {
     stringstream s;
     for (int i = 1; i < population_size - 1; ++i) {
         allFitness[i - 1] = individuals[i]->getFitness( );
-        s << individuals[i]->getFitness() << ",";
+        s << individuals[i]->getFitness( ) << ",";
     }
     double mean = Utility::CalculateMean(allFitness, population_size - 2);
     double sd = Utility::StandardDeviation(allFitness, population_size - 2, mean);
@@ -676,25 +690,28 @@ string Population::GetFitnessData( ) {
 }
 
 ostream & operator<<(ostream & os, const Population &source) {
-    os << "Printing Current Population..." << endl;
-    int* fitnessValues = new int[source.population_size];
-    for (int i = 0; i < source.population_size; ++i) {
-        os << "Individual " << i << endl;
-        os << source.individuals[i]->printTable(source.timeSlots, source.timeslot_count);
-        fitnessValues[i] = source.individuals[i]->getFitness( );
-        os << "Fitnesss: " << fitnessValues[i] << endl;
-        os << "Valid: " << (source.validateChromosome(source.individuals[i]) ? "Yes" : "No") << endl;
-        os << "*******************************************************" << endl << endl;
+    if (PRINT_WHOLE_POPULATION) {
+        os << "Printing Current Population..." << endl;
+        int* fitnessValues = new int[source.population_size];
+        for (int i = 0; i < source.population_size; ++i) {
+            os << "Individual " << i << endl;
+            os << source.individuals[i]->printTable(source.timeSlots, source.timeslot_count);
+            fitnessValues[i] = source.individuals[i]->getFitness( );
+            os << "Fitnesss: " << fitnessValues[i] << endl;
+            os << "Valid: " << (source.validateChromosome(source.individuals[i]) ? "Yes" : "No") << endl;
+            os << "*******************************************************" << endl << endl;
+        }
+        os << "Current fitness values: " << endl;
+        for (int i = 0; i < source.population_size - 1; ++i) {
+            os << fitnessValues[i] << ",";
+        }
+        os << fitnessValues[source.population_size - 1] << endl;
     }
-    os << "Current fitness values: " << endl;
-    for (int i = 0; i < source.population_size - 1; ++i) {
-        os << fitnessValues[i] << ",";
-    }
-    os << fitnessValues[source.population_size - 1] << endl;
-    os << "\n\nStrongest Individual: " << source.strongestIndividualID;
+    os << "\n\nStrongest Individual: " << source.strongestIndividualID << endl;
     os << source.individuals[source.strongestIndividualID]->printTable(source.timeSlots, source.timeslot_count);
     os << "Fitnesss: " << source.individuals[source.strongestIndividualID]->getFitness( ) << endl;
     os << "Valid: " << (source.validateChromosome(source.individuals[source.strongestIndividualID]) ? "Yes" : "No") << endl;
+    os << "Professor Credits: " << source.individuals[source.strongestIndividualID]->getProfessorLoads( ) << endl;
 
     os << "Done." << endl;
     return os;

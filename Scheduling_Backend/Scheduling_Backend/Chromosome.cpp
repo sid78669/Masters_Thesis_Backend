@@ -1,21 +1,29 @@
 #include "Chromosome.h"
 
 
-Chromosome::Chromosome(int geneLength, int profCount) {
+Chromosome::Chromosome(int geneLength, int profCount, double * profCredsMax) {
     gene_length = geneLength;
     fitness = 0;
     genes = new Gene[geneLength];
     prof_count = profCount;
-    professorCredits = new int[profCount];
+    professorCredits = new double[profCount];
+    for (int i = 0; i < profCount; i++) {
+        professorCredits[i] = profCredsMax[i];
+    }
 }
 
 Chromosome::Chromosome(const Chromosome * other) {
     gene_length = other->gene_length;
     genes = new Gene[gene_length];
-    professorCredits = new int[other->prof_count];
+    prof_count = other->prof_count;
+    professorCredits = new double[other->prof_count];
     fitness = other->fitness;
     for (int i = 0; i < gene_length; i++) {
         setGene(i, other->genes[i]);
+    }
+
+    for (int i = 0; i < other->prof_count; i++) {
+        professorCredits[i] = other->professorCredits[i];
     }
 }
 
@@ -23,18 +31,41 @@ Chromosome::Chromosome(const Chromosome &source) {
     cout << "Overloaded Copy Constructor" << endl;
     gene_length = source.gene_length;
     genes = new Gene[gene_length];
+    prof_count = source.prof_count;
     fitness = source.fitness;
     for (int i = 0; i < gene_length; i++) {
         setGene(i, source.genes[i]);
     }
+
+    for (int i = 0; i < source.prof_count; i++) {
+        professorCredits[i] = source.professorCredits[i];
+    }
+}
+
+double Chromosome::getCourseLoad(int profID) {
+    return professorCredits[profID];
+}
+
+string Chromosome::getProfessorLoads( ) {
+    string rtnVal = "";
+    for (int i = 0; i < prof_count; i++) {
+        rtnVal += "(" + to_string(i) + "," + to_string(professorCredits[i]) + ")";
+    }
+
+    return rtnVal;
 }
 
 Chromosome& Chromosome::operator=(const Chromosome &source) {
     gene_length = source.gene_length;
     genes = new Gene[gene_length];
+    prof_count = source.prof_count;
     fitness = source.fitness;
     for (int i = 0; i < gene_length; i++) {
         setGene(i, source.genes[i]);
+    }
+
+    for (int i = 0; i < source.prof_count; i++) {
+        professorCredits[i] = source.professorCredits[i];
     }
 
     if (DEBUG_ASSIGNMENT) {
@@ -56,7 +87,9 @@ void Chromosome::setTime(int geneID, int newTime) {
     genes[geneID].setTimeID(newTime);
 }
 
-void Chromosome::setProf(int geneID, int newProf, int oldCredits, int newCredits) {
+void Chromosome::setProf(int geneID, int newProf, double courseCred) {
+    professorCredits[getProf(geneID)] += courseCred;
+    professorCredits[newProf] -= courseCred;
     genes[geneID].setProfID(newProf);
 
 }
@@ -97,7 +130,8 @@ string Chromosome::print(int geneID) {
     return to_string(genes[geneID].getProfID( )) + ", " + to_string(genes[geneID].getTimeID( ));
 }
 
-void Chromosome::mutate(int ** sectionProf, int section_count, int ** creditTimeSlot, TimeSlot ** timeSlots, Helper * h, double mutation_probability) {
+void Chromosome::mutate(int ** sectionProf, int section_count, int ** creditTimeSlot, TimeSlot ** timeSlots, Helper * h, double mutation_probability, double * sectionCredit) {
+    //TODO: Add the prof credit constraint
     if (DEBUG_MUTATION)
         cout << "Mutating Individual... " << endl;
     
@@ -127,7 +161,7 @@ void Chromosome::mutate(int ** sectionProf, int section_count, int ** creditTime
                 profID = h->randNum(1, compProfs);
             else
                 profID = 1;
-            setProf(g, sectionProf[g][profID]);
+            setProf(g, sectionProf[g][profID], sectionCredit[g]);
         }
     }
 
@@ -135,7 +169,7 @@ void Chromosome::mutate(int ** sectionProf, int section_count, int ** creditTime
         cout << "Finished Mutating." << endl;
 }
 
-void Chromosome::repair(int ** sectionProf, int section_count, int ** creditTimeSlot, TimeSlot ** timeSlots, Helper * h, int ** incompatibleSections, const int REPAIR_TRIES) {
+void Chromosome::repair(int ** sectionProf, int section_count, int ** creditTimeSlot, TimeSlot ** timeSlots, Helper * h, int ** incompatibleSections, const int REPAIR_TRIES, double * sectionCred) {
     /*
     //    Do a loop for maximum of REPAIR_TRIES. Each time keep a boolean
     //    that will keep track of whether repairs were made or not. If
@@ -198,6 +232,8 @@ void Chromosome::repair(int ** sectionProf, int section_count, int ** creditTime
                         //Check if the new prof selected is in the taboo list.
                         if (find(tabooProf->begin( ), tabooProf->end( ), profID) == tabooProf->end( )) {
                             //If the prof is not in the taboo list, set it as the new prof and break out of the loop.
+                            professorCredits[getProf(right)] += sectionCred[right];
+                            professorCredits[profID] -= sectionCred[right];
                             genes[right].setProfID(profID);
                             break;
                         }
@@ -231,8 +267,8 @@ void Chromosome::repair(int ** sectionProf, int section_count, int ** creditTime
                         }
 
                     } while (--looped >= 0);
-                }
-                setGene(right, genes[right]);
+                }           
+                //setGene(right, genes[right]);
             }
         }
         if (tries > 0 && DEBUG_REPAIR)
@@ -273,6 +309,13 @@ void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref, 
         }
     }
 
+    //Check to ensure no prof has been assigned more than his share of courses
+    for (int p = 0; p < gene_length; p++) {
+        if (professorCredits[p] < 0) {
+            fitness -= MAX_FITNESS / gene_length;
+        }
+    }
+
     //Check for hard constraint violation for time conflict
     for (int left = 0; left < gene_length; left++) {
         if (left < 0)
@@ -286,7 +329,7 @@ void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref, 
                 if (DEBUG_FITNESS)
                     cout << "Incompatible Time: " << left << " with " << right << endl;
                 if (!profConflict[left]) {
-                    int penalty = MAX_FITNESS / (prof_count);
+                    int penalty = MAX_FITNESS / (gene_length);
                     if (incompatibleSections[left][0] > 2)
                         penalty *= incompatibleSections[left][0];
                     numConflicts++;
@@ -372,6 +415,12 @@ string Chromosome::printHLine(int lineWidth) {
     rtnVal.resize(lineWidth, '-');
     rtnVal += "\n";
     return rtnVal;
+}
+
+void Chromosome::setProfCredit(int * profCreds) {
+    for (int x = 0; x < prof_count; x++) {
+        professorCredits[x] = profCreds[x];
+    }
 }
 
 

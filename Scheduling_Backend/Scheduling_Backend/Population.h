@@ -14,6 +14,7 @@
 #define DEBUG_INIT 0
 #define DEBUG_PRINTTABLE 0
 #define DEBUG_PROF_NEW 0
+#define PRINT_WHOLE_POPULATION 0
 
 #include "Chromosome.h"
 #include "TimeSlot.h"
@@ -64,7 +65,7 @@ private:
     int ** profPref;
     bool * individualValidity;
     int * profSectionsTaught;
-    int * profCreditMax;
+    double * profCreditMax;
 
 
     void readDatFiles( );
