@@ -1,17 +1,16 @@
 #include "Population.h"
 
-Population::Population(string dataFilePath, int populationSize, int generationCount, int replacementWait, double mutationProbability) {
+//Population::Population(string dataFilePath, int populationSize, int generationCount, int replacementWait, double mutationProbability) {
+Population::Population(string dataFilePath) {
     data_file_path = dataFilePath;
-    population_size = populationSize;
+    /*population_size = populationSize;
     generation_count = generationCount;
     replacement_wait = replacementWait;
-    mutation_probability = mutationProbability;
+    mutation_probability = mutationProbability;*/
     section_count = 0;
     professor_count = 0;
     weakestIndividualID = 0;
     //Setup the Individuals array
-    individuals = new Chromosome*[population_size];
-    individualValidity = new bool[population_size];
     readDatFiles( );
 
 }//end Constructor
@@ -38,6 +37,12 @@ void Population::readDatFiles( ) {
     ifstream inFile(data_file_path);
 
     cout << "Beginning Initial Setup...." << endl << endl;
+
+    //Read the parameters
+    readParameters(inFile);
+    individuals = new Chromosome*[population_size];
+    individualValidity = new bool[population_size];
+
 
     //Read the section List
     readSectionList(inFile, courses);
@@ -76,6 +81,7 @@ void Population::readDatFiles( ) {
     individualValidity[0] = validateChromosome(individuals[0]);
     cout << "First Valid: " << individualValidity[0] << endl << endl;
 
+
     //Now we have enough basic information that we can populate our individuals based on the first one.
     initPopulationFromFirst( );
 
@@ -88,9 +94,29 @@ void Population::readDatFiles( ) {
 
 
     inFile.close( );
+
     cout << endl << "Initial Setup Complete" << endl << endl;
     cout << "0," << GetFitnessData( ) << endl;
 }//end readDatFiles()
+
+void Population::readParameters(ifstream &inFile) {
+    string currLine;
+    if (inFile.is_open( )) {
+        getline(inFile, currLine);
+        getline(inFile, currLine);
+        generation_count = stoi(currLine);
+
+        getline(inFile, currLine);
+        population_size = stoi(currLine);
+
+        getline(inFile, currLine);
+        replacement_wait = stoi(currLine);
+
+        getline(inFile, currLine);
+        mutation_probability = stod(currLine) / 100.0;
+        getline(inFile, currLine);
+    }
+}
 
 /*
 This method will read the section data file. It will then add the list of courses it finds to the vector.
@@ -292,7 +318,7 @@ void Population::readTimeSlotList(ifstream &inFile) {
 
     vector<string> tokenizedVersion;
     string currLine;
-
+    int timeslotID = 0;
     TimeSlot ** tempArray = new TimeSlot*[ARRAY_MAX];
     if (inFile.is_open( )) {
         while (getline(inFile, currLine)) {
@@ -302,6 +328,19 @@ void Population::readTimeSlotList(ifstream &inFile) {
                 break;
             Utility::CleanWhiteSpace(currLine);
             tokenizedVersion = Utility::Tokenize(currLine, ',');
+            timeslotID = stoi(tokenizedVersion.at(0));
+            while (timeslot_count < timeslotID) {
+                tempArray[timeslot_count] = new TimeSlot(-1);
+                int creditLoc = 0;
+                while (!cTimeSlot.empty( ) && creditLoc < (signed) cTimeSlot.size( ) && tempArray[cTimeSlot.at(creditLoc).at(0)]->getCredits( ) != -1)
+                    creditLoc++;
+                if (creditLoc >= (signed) cTimeSlot.size( )) {
+                    vector<int> newVec;
+                    cTimeSlot.push_back(newVec);
+                }
+                cTimeSlot.at(creditLoc).push_back(timeslot_count);
+                timeslot_count++;
+            }
             double creds = stod(tokenizedVersion.at(1));
             tempArray[timeslot_count] = new TimeSlot(creds);
             for (int i = 0; i < 6; ++i)
@@ -327,7 +366,9 @@ void Population::readTimeSlotList(ifstream &inFile) {
 
         credit_count = cTimeSlot.size( );
         creditTimeSlot = new int*[credit_count];
+        timeCredLegend = new double[credit_count];
         for (int i = 0; i < credit_count; ++i) {
+            timeCredLegend[i] = timeSlots[cTimeSlot.at(i).at(0)]->getCredits( );
             creditTimeSlot[i] = new int[cTimeSlot.at(i).size( ) + 1];
             creditTimeSlot[i][0] = cTimeSlot.at(i).size( );
             for (int j = 1; j <= creditTimeSlot[i][0]; ++j) {
@@ -397,7 +438,7 @@ void Population::initPopulationFromFirst( ) {
         if (DEBUG_INIT_POPULATION)
             cout << "Pre-Mutation: " << endl << individuals[i]->print( );
 
-        individuals[i]->mutate(sectionProf, section_count, creditTimeSlot, timeSlots, &h, mutation_probability, sectionCredit);
+        individuals[i]->mutate(sectionProf, section_count, creditTimeSlot, timeSlots, timeCredLegend, credit_count, &h, mutation_probability, sectionCredit);
 
         postMutation = individuals[i];
 
@@ -405,7 +446,7 @@ void Population::initPopulationFromFirst( ) {
             cout << "Post-Mutation: " << endl << individuals[i]->print( ) << endl;
 
         //After mutation, repair.
-        individuals[i]->repair(sectionProf, section_count, creditTimeSlot, timeSlots, &h, incompatibleSections, REPAIR_TRIES, sectionCredit);
+        individuals[i]->repair(sectionProf, section_count, creditTimeSlot, timeSlots, timeCredLegend, credit_count, &h, incompatibleSections, REPAIR_TRIES, sectionCredit);
         postRepair = new Chromosome(individuals[i]);
 
         if (DEBUG_INIT_POPULATION)
@@ -581,6 +622,7 @@ void Population::Evolve( ) {
                     cout << endl;
             }
         }
+
         int sacrificeID = h.randNum(0, population_size - 1);
         if (individuals[sacrificeID]->getFitness( ) < lowestFitnessSeen)
             lowestFitnessSeen = individuals[sacrificeID]->getFitness( );
@@ -595,8 +637,8 @@ void Population::Evolve( ) {
             cout << "Sacrifice: " << endl << sacrifice->print( ) << "Source: " << endl << individuals[sacrificeID]->print( ) << endl;
         }
 
-        sacrifice->mutate(sectionProf, section_count, creditTimeSlot, timeSlots, &h, mutation_probability, sectionCredit);
-        sacrifice->repair(sectionProf, section_count, creditTimeSlot, timeSlots, &h, incompatibleSections, REPAIR_TRIES, sectionCredit);
+        sacrifice->mutate(sectionProf, section_count, creditTimeSlot, timeSlots, timeCredLegend, credit_count, &h, mutation_probability, sectionCredit);
+        sacrifice->repair(sectionProf, section_count, creditTimeSlot, timeSlots, timeCredLegend, credit_count, &h, incompatibleSections, REPAIR_TRIES, sectionCredit);
         sacrifice->updateFitness(incompatibleSections, sectionPref, profPref, timeSlots, professor_count, timeslot_count, profSectionsTaught);
 
         if (sacrifice->getFitness( ) > individuals[weakestIndividualID]->getFitness( )) {
@@ -610,7 +652,7 @@ void Population::Evolve( ) {
                 }
             }
             generationSinceLastReplacement = 0;
-            //delete individuals[weakestIndividualID];
+
             if (DEBUG_EVOLVE) {
                 cout << "Replacing " << weakestIndividualID << " with the sacrifice." << endl;
                 cout << "Original\t\tNew" << endl;

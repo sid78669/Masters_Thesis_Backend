@@ -1,46 +1,52 @@
+//START*PARAMETERS*
+5000
+50
+100
+2
+*END*PARAMETERS
 //*START*SECTION*
 //courseID, sections
-cmpsc412, 1
-cmpsc472, 1
-comp594, 1
-comp519, 1
-stat401, 2
-cmpsc470, 1
-comp516, 1
-math475w, 1
-math017, 2
-math449, 1
-math035, 1
-math110, 4
-math230, 3
-math250, 5
 cmpsc101, 1
+cmpsc121, 3
+cmpsc122, 1
 cmpsc200, 2
+cmpsc221, 1
+cmpsc360, 2
+cmpsc412, 1
 cmpsc421, 1
 cmpsc444, 1
-cmpsc487w, 1
-cmpsc121, 3
 cmpsc462, 1
-cmpsc122, 1
-cmpsc221, 1
-math430, 1
-cmpsc360, 2
+cmpsc470, 1
+cmpsc472, 1
+cmpsc487w, 1
 comp505, 1
-math435, 1
-math315, 1
-stat460, 1
-math318, 1
-math004, 2
-math026, 3
+comp516, 1
+comp519, 1
+comp594, 1
 math003, 1
-math200, 1
-stat200, 8
-math022, 5
-math220, 5
+math004, 2
+math017, 2
 math021, 6
-math141, 5
+math022, 5
+math026, 3
+math035, 1
 math041, 3
+math110, 4
 math140, 9
+math141, 5
+math200, 1
+math220, 5
+math230, 3
+math250, 5
+math315, 1
+math318, 1
+math430, 1
+math435, 1
+math449, 1
+math475w, 1
+stat200, 8
+stat401, 2
+stat460, 1
 *END*SECTION*
 //*START*COURSE*
 //depttcourse, credits[,deptt:course[,incompatible list]]
@@ -88,16 +94,16 @@ math140, 4, cmpsc121,
 *END*COURSE*
 //*START*PROFESSOR*
 //profid, maxcredit, courses[, courses]
-00, 12, cmpsc200, math026, stat200, math220
-01, 6, cmpsc121, cmpsc221
-02, 12, cmpsc421, cmpsc444, cmpsc412, cmpsc462
-03, 14, math430, math140, math475w, math022
-04, 14, math250, math022
-05, 3, comp505
-06, 8, math141, math140
-07, 3, math004
-08, 17, math140, math250, math220
-09, 6, math041, math022
+0, 12, cmpsc200, math026, stat200, math220
+1, 6, cmpsc121, cmpsc221
+2, 12, cmpsc421, cmpsc444, cmpsc412, cmpsc462
+3, 14, math430, math140, math475w, math022
+4, 14, math250, math022
+5, 3, comp505
+6, 8, math141, math140
+7, 3, math004
+8, 17, math140, math250, math220
+9, 6, math041, math022
 10, 9, comp516, cmpsc122, cmpsc470
 11, 13, math141, math041, math220
 12, 3, cmpsc200
@@ -164,192 +170,180 @@ math140, 4, cmpsc121,
 *END*TIMESLOT*
 //*START*COURSEPREF*
 //course, pref(m-a-e)
-cmpsc412, (1,0,2)
-cmpsc472, (2,0,1)
-comp594, (2,1,0)
-comp519, (2,1,0)
-stat401, (1,0,2)
-cmpsc470, (2,0,1)
-comp516, (2,1,0)
-math475w, (1,0,2)
-math017, (2,0,1)
-math449, (1,0,2)
-math035, (0,1,2)
-math110, (0,1,2)
-math230, (1,2,0)
-math250, (1,0,2)
-cmpsc101, (0,1,2)
-cmpsc200, (2,1,0)
-cmpsc421, (2,1,0)
-cmpsc444, (2,1,0)
-cmpsc487w, (2,1,0)
-cmpsc121, (0,1,2)
-cmpsc462, (1,0,2)
-cmpsc122, (0,1,2)
-cmpsc221, (0,1,2)
-math430, (0,1,2)
-cmpsc360, (2,0,1)
-comp505, (2,1,0)
-math435, (1,0,2)
-math315, (0,1,2)
-stat460, (1,0,2)
-math318, (0,1,2)
-math004, (0,2,1)
-math026, (0,1,2)
-math003, (1,0,2)
-math200, (0,1,2)
-stat200, (0,1,2)
-math022, (0,1,2)
-math220, (0,1,2)
-math021, (2,1,0)
-math141, (0,1,2)
-math041, (0,1,2)
-math140, (0,1,2)
+cmpsc412, (1-0-2)
+cmpsc472, (2-0-1)
+comp594, (2-1-0)
+comp519, (2-1-0)
+stat401, (1-0-2)
+cmpsc470, (2-0-1)
+comp516, (2-1-0)
+math475w, (1-0-2)
+math017, (2-0-1)
+math449, (1-0-2)
+math035, (0-1-2)
+math110, (0-1-2)
+math230, (1-2-0)
+math250, (1-0-2)
+cmpsc101, (0-1-2)
+cmpsc200, (2-1-0)
+cmpsc421, (2-1-0)
+cmpsc444, (2-1-0)
+cmpsc487w, (2-1-0)
+cmpsc121, (0-1-2)
+cmpsc462, (1-0-2)
+cmpsc122, (0-1-2)
+cmpsc221, (0-1-2)
+math430, (0-1-2)
+cmpsc360, (2-0-1)
+comp505, (2-1-0)
+math435, (1-0-2)
+math315, (0-1-2)
+stat460, (1-0-2)
+math318, (0-1-2)
+math004, (0-2-1)
+math026, (0-1-2)
+math003, (1-0-2)
+math200, (0-1-2)
+stat200, (0-1-2)
+math022, (0-1-2)
+math220, (0-1-2)
+math021, (2-1-0)
+math141, (0-1-2)
+math041, (0-1-2)
+math140, (0-1-2)
 *END*COURSEPREF*
 //START*PROFPREF*
 //profID, pref(m-a-e)
-22, (2,1,0)
-26, (2,1,0)
-32, (0,1,2)
-13, (0,1,2)
-36, (0,2,1)
-10, (2,1,0)
-9, (0,1,2)
-25, (2,1,0)
-14, (2,1,0)
-30, (1,0,2)
-4, (0,1,2)
-7, (2,1,0)
-17, (0,1,2)
-11, (0,1,2)
-5, (2,1,0)
-8, (0,1,2)
-21, (1,0,2)
-31, (2,1,0)
-16, (0,1,2)
-23, (0,1,2)
-3, (0,1,2)
-24, (2,0,1)
-2, (2,1,0)
-19, (0,1,2)
-20, (2,1,0)
-18, (0,1,2)
-12, (2,0,1)
-6, (0,1,2)
-35, (1,0,2)
-0, (2,1,0)
-34, (0,1,2)
-33, (0,1,2)
-15, (0,1,2)
-29, (1,0,2)
-27, (0,1,2)
-1, (2,1,0)
-28, (0,1,2)
+22, (2-1-0)
+26, (2-1-0)
+32, (0-1-2)
+13, (0-1-2)
+36, (0-2-1)
+10, (2-1-0)
+9, (0-1-2)
+25, (2-1-0)
+14, (2-1-0)
+30, (1-0-2)
+4, (0-1-2)
+7, (2-1-0)
+17, (0-1-2)
+11, (0-1-2)
+5, (2-1-0)
+8, (0-1-2)
+21, (1-0-2)
+31, (2-1-0)
+16, (0-1-2)
+23, (0-1-2)
+3, (0-1-2)
+24, (2-0-1)
+2, (2-1-0)
+19, (0-1-2)
+20, (2-1-0)
+18, (0-1-2)
+12, (2-0-1)
+6, (0-1-2)
+35, (1-0-2)
+0, (2-1-0)
+34, (0-1-2)
+33, (0-1-2)
+15, (0-1-2)
+29, (1-0-2)
+27, (0-1-2)
+1, (2-1-0)
+28, (0-1-2)
 *END*PROFPREF*
 //*START*INITIAL*
-cmpsc200, 12, 0
-math140, 21, 12
-math230, 13, 12
-math475w, 3, 8
-math041, 9, 17
-math200, 34, 2
 cmpsc101, 18, 25
-math141, 11, 18
-cmpsc121, 22, 7
-math140, 14, 23
-math250, 4, 28
-comp505, 5, 13
-stat200, 15, 24
-stat200, 30, 24
-math022, 9, 5
-math110, 18, 24
-math435, 21, 31
-stat460, 15, 31
-math021, 28, 27
-math026, 23, 1
-cmpsc470, 10, 0
-math449, 29, 25
-math021, 28, 5
-math220, 11, 20
-math140, 16, 12
-math230, 13, 28
-math141, 6, 15
-stat401, 15, 25
-cmpsc444, 2, 10
-comp594, 26, 30
-math041, 35, 17
-math017, 36, 13
-stat200, 30, 33
-math140, 3, 18
-cmpsc121, 28, 31
-math250, 8, 12
-math022, 27, 25
-math021, 25, 30
-math220, 0, 3
-comp519, 26, 10
-math220, 8, 20
-cmpsc412, 2, 6
-math110, 19, 29
-math140, 17, 15
-math250, 4, 12
-math141, 11, 19
-stat401, 30, 25
-math315, 32, 5
-cmpsc221, 1, 0
-cmpsc360, 33, 2
-cmpsc462, 2, 9
-cmpsc122, 10, 9
-stat200, 16, 14
-math017, 36, 17
-math140, 6, 14
-math250, 4, 28
-stat200, 0, 4
-math141, 19, 15
-math022, 4, 27
-cmpsc487w, 20, 30
-math026, 0, 1
-stat200, 30, 32
-math021, 36, 16
-cmpsc472, 26, 8
-math220, 29, 21
-math004, 7, 16
-comp516, 10, 7
-math022, 31, 16
-math110, 18, 33
-math003, 24, 0
-math140, 8, 28
-cmpsc360, 33, 8
-math041, 9, 17
-math035, 36, 5
-cmpsc200, 0, 0
-math140, 3, 14
-cmpsc421, 2, 7
-math230, 29, 28
 cmpsc121, 1, 5
-math141, 19, 28
-math250, 4, 12
-stat200, 16, 26
-math140, 8, 15
-math022, 17, 27
-math430, 3, 27
-stat200, 16, 24
-math021, 21, 1
-math026, 0, 2
-math318, 32, 1
-math021, 36, 27
-math220, 11, 21
+cmpsc121, 22, 7
+cmpsc121, 28, 31
+cmpsc122, 10, 9
+cmpsc200, 12, 0
+cmpsc200, 0, 0
+cmpsc221, 1, 0
+cmpsc360, 33, 8
+cmpsc360, 33, 2
+cmpsc412, 2, 6
+cmpsc421, 2, 7
+cmpsc444, 2, 10
+cmpsc462, 2, 9
+cmpsc470, 10, 0
+cmpsc472, 26, 8
+cmpsc487w, 20, 30
+comp505, 5, 13
+comp516, 10, 7
+comp519, 26, 10
+comp594, 26, 30
+math003, 24, 0
 math004, 27, 2
+math004, 7, 16
+math017, 36, 17
+math017, 36, 13
+math021, 36, 27
+math021, 28, 5
+math021, 25, 30
+math021, 36, 16
+math021, 21, 1
+math021, 28, 27
+math022, 31, 16
+math022, 17, 27
+math022, 9, 5
+math022, 27, 25
+math022, 4, 27
+math026, 0, 1
+math026, 0, 2
+math026, 23, 1
+math035, 36, 5
+math041, 9, 17
+math041, 9, 17
+math041, 35, 17
+math110, 18, 24
 math110, 13, 22
+math110, 18, 33
+math110, 19, 29
+math140, 8, 15
+math140, 14, 23
+math140, 3, 18
+math140, 6, 14
+math140, 8, 28
+math140, 21, 12
+math140, 16, 12
+math140, 17, 15
+math140, 3, 14
+math141, 19, 15
+math141, 19, 28
+math141, 11, 18
+math141, 6, 15
+math141, 11, 19
+math200, 34, 2
+math220, 0, 3
+math220, 11, 20
+math220, 11, 21
+math220, 29, 21
+math220, 8, 20
+math230, 13, 28
+math230, 13, 12
+math230, 29, 28
+math250, 4, 28
+math250, 4, 12
+math250, 4, 28
+math250, 8, 12
+math250, 4, 12
+math315, 32, 5
+math318, 32, 1
+math430, 3, 27
+math435, 21, 31
+math449, 29, 25
+math475w, 3, 8
+stat200, 30, 24
+stat200, 16, 24
+stat200, 30, 32
+stat200, 0, 4
+stat200, 30, 33
+stat200, 15, 24
+stat200, 16, 26
+stat200, 16, 14
+stat401, 15, 25
+stat401, 30, 25
+stat460, 15, 31
 *END*INITIAL*
-//START*GENERATIONS*
-5000
-*END*GENERATIONS
-//START*POPULATION*SIZE*
-50
-*END*POPULATION*SIZE
-//START*REPLACEMENT*WAIT*
-100
-*END*REPLACEMENT*WAIT
-//START*MUTATION*PROBABILITY*
-2
-*END*MUTATION*PROBABILITY

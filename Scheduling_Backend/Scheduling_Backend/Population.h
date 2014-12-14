@@ -31,7 +31,8 @@ class Chromosome;
 
 class Population {
 public:
-    Population(string dataFilePath, int populationSize, int generationCount, int replacementWait, double mutationProbability);
+    //Population(string dataFilePath, int populationSize, int generationCount, int replacementWait, double mutationProbability);
+    Population(string dataFilePath);
     void Evolve( );
     string PrintTableFormat( );
     string GetFitnessData( );
@@ -56,6 +57,7 @@ private:
     Helper h;
     Chromosome **individuals;
     TimeSlot ** timeSlots;
+    double * timeCredLegend;
     int ** incompatibleSections;
     int ** creditTimeSlot;
     int ** sectionProf;
@@ -77,6 +79,7 @@ private:
     void initPopulationFromFirst();
     void readCoursePref(ifstream &input, vector<string>);
     void readProfPref(ifstream &input);
+    void readParameters(ifstream &input);
     bool validateChromosome(Chromosome *const toValidate) const;
     string validatePrint(int i);
 };

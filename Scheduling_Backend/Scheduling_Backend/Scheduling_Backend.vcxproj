@@ -86,6 +86,7 @@
     </Text>
     <None Include="init.dat" />
     <None Include="inputFiles.dat" />
+    <None Include="new_input.dat" />
     <None Include="professors.dat" />
     <None Include="sections.dat" />
     <None Include="timeslot.dat" />

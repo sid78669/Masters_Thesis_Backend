@@ -1,8 +1,9 @@
 
+#include <vld.h> 
 #include "Population.h"
 
 int main( ) {
-    Population p("inputFiles.dat", 50, 5000, 200, 0.3);
+    Population p("new_input.dat");
     cout << "Begin Evolution" << endl;
     p.Evolve( );
     cout << endl << "End Evolution" << endl;
