@@ -8,7 +8,7 @@ private:
     int sectionID;
     int profID;
 public:
-    PeriodData(int _sectionID, int _profID ) {
+    PeriodData(int _sectionID, int _profID) {
         sectionID = _sectionID;
         profID = _profID;
     }

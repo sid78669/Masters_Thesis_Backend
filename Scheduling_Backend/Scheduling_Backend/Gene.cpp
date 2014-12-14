@@ -1,13 +1,12 @@
 #include "Gene.h"
 
-
-Gene::Gene( ) {
-    profID = -1;
-    timeID = -1;
+Gene::Gene(int pID, int tID) {
+    profID = pID;
+    timeID = tID;
 }
 
-
 Gene::~Gene( ) {
+
 }
 
 void Gene::setProfID(int prof) {

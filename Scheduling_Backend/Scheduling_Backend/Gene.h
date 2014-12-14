@@ -7,8 +7,8 @@ using namespace std;
 
 class Gene {
 public:
-    Gene( );
-    ~Gene( );
+    Gene(int pID, int tID);
+    virtual ~Gene( );
     void setProfID(int);
     void setTimeID(int);
 

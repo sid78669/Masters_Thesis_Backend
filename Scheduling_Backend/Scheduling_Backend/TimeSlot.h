@@ -12,19 +12,19 @@ public:
         int endTime;
     };
 
-    
+
     TimeSlot(double);
     TimeSlot(const TimeSlot*&);
     TimeSlot(const TimeSlot &);
-    ~TimeSlot( );
-        
+    virtual ~TimeSlot( );
+
     void setPeriod(int, string);
     void setCredits(double);
-    
+
     double getCredits( );
     bool isOverlap(TimeSlot);
-    bool isMorning();
-    bool isAfternoon();
+    bool isMorning( );
+    bool isAfternoon( );
     int getStartQuarter(int day);
     int getEndQuarter(int day);
 

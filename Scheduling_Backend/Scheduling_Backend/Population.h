@@ -36,7 +36,7 @@ public:
     void Evolve( );
     string PrintTableFormat( );
     string GetFitnessData( );
-    ~Population( );
+    virtual ~Population( );
     friend ostream & operator<<(ostream & os, const Population &source);
 private:
     string data_file_path;
@@ -53,7 +53,7 @@ private:
     int strongestIndividualID;
     int lowestFitnessSeen;
     int highestFitnessSeen;
-    const int REPAIR_TRIES = 5;
+    const int REPAIR_TRIES;
     Helper h;
     Chromosome **individuals;
     TimeSlot ** timeSlots;
@@ -62,13 +62,12 @@ private:
     int ** creditTimeSlot;
     int ** sectionProf;
     int ** courseSection;
-    double * sectionCredit;
     int ** sectionPref;
     int ** profPref;
+    double * sectionCredit;
     bool * individualValidity;
     int * profSectionsTaught;
     double * profCreditMax;
-
 
     void readDatFiles( );
     void readSectionList(ifstream &input, vector<string> &);
@@ -76,11 +75,11 @@ private:
     void readProfessorList(ifstream &input, vector<string>);
     void readTimeSlotList(ifstream &input);
     void readInitialSchedule(ifstream &input);
-    void initPopulationFromFirst();
+    void initPopulationFromFirst( );
     void readCoursePref(ifstream &input, vector<string>);
     void readProfPref(ifstream &input);
     void readParameters(ifstream &input);
-    bool validateChromosome(Chromosome *const toValidate) const;
+    bool validateChromosome(Chromosome * const toValidate) const;
     string validatePrint(int i);
 };
 
