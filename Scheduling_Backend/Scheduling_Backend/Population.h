@@ -11,6 +11,7 @@
 #define DEBUG_INIT_POPULATION_COMPARED 0
 #define DEBUG_VALIDATE 0
 #define DEBUG_EVOLVE 0
+#define DEBUG_LO 0
 #define DEBUG_INIT 0
 #define DEBUG_PRINTTABLE 0
 #define DEBUG_PROF_NEW 0
@@ -81,6 +82,8 @@ private:
     void readParameters(ifstream &input);
     bool validateChromosome(Chromosome * const toValidate) const;
     string validatePrint(int i);
+
+    int localOptimization(int currentGeneration );
 };
 
 #endif

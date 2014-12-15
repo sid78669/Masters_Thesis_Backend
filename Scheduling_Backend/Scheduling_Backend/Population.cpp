@@ -707,13 +707,126 @@ bool Population::validateChromosome(Chromosome * const toValidate) const {
     return valid;
 }
 
+int Population::localOptimization(int currentGeneration) {
+    cout << "Intiate Local Optimization...." << endl;
+
+    int generationSinceLastReplacement = 0;
+
+    int i = currentGeneration;
+    int sacrificeID = 0;
+    for (; sacrificeID < population_size - 1; ++i, ++sacrificeID) {
+        if (DEBUG_LO) {
+            if (generationSinceLastReplacement <= 1) {
+                cout << "Current Generation: " << i
+                    << " Generations since last replacement: "
+                    << generationSinceLastReplacement;
+                if (generationSinceLastReplacement == 1) {
+                    cout << "...";
+                } else
+                    cout << endl;
+            }
+        }
+
+        Chromosome * sacrifice = new Chromosome(individuals[sacrificeID]);
+
+        sacrifice->mutate(sectionProf, section_count, creditTimeSlot, timeSlots,
+                          timeCredLegend, credit_count, &h, 0.5,
+                          sectionCredit);
+        sacrifice->repair(sectionProf, section_count, creditTimeSlot, timeSlots,
+                          timeCredLegend, credit_count, &h, incompatibleSections,
+                          REPAIR_TRIES, sectionCredit);
+        sacrifice->updateFitness(incompatibleSections, sectionPref, profPref,
+                                 timeSlots, professor_count, timeslot_count, profSectionsTaught);
+
+        //if (sacrifice->getFitness( ) > individuals[weakestIndividualID]->getFitness( )) {
+        //    if (DEBUG_LO) {
+        //        if (DEBUG_LO && generationSinceLastReplacement > 1) {
+        //            cout << endl << "Current Generation: " << i
+        //                << " Generations since last replacement: "
+        //                << generationSinceLastReplacement << endl;
+        //        } else if (DEBUG_LO
+        //                   && generationSinceLastReplacement == 1) {
+        //            cout << " Replaced" << endl;
+        //        } else if (DEBUG_LO
+        //                   && generationSinceLastReplacement == 0) {
+        //            cout << endl;
+        //        }
+        //    }
+        //    //generationSinceLastReplacement = 0;
+
+        //    if (DEBUG_LO) {
+        //        cout << "Replacing " << weakestIndividualID
+        //            << " with the sacrifice." << endl;
+        //        cout << "Original\t\tNew" << endl;
+        //        for (int i = 0; i < section_count; ++i)
+        //            cout << individuals[weakestIndividualID]->print(i)
+        //            << "  ->  " << sacrifice->print(i) << endl;
+
+        //        cout << "New weakest: " << endl;
+        //    }
+
+        //    individuals[weakestIndividualID] = new Chromosome(sacrifice);
+
+        //    if (DEBUG_LO)
+        //        cout << individuals[weakestIndividualID]->print( );
+
+        //    for (int j = 0; j < population_size; ++j) {
+        //        if (individuals[j]->getFitness( )
+        //            < individuals[weakestIndividualID]->getFitness( )) {
+        //            weakestIndividualID = j;
+        //        }
+        //        if (individuals[j]->getFitness( )
+        //            > individuals[strongestIndividualID]->getFitness( )) {
+        //            strongestIndividualID = j;
+        //        }
+        //    }
+
+        //} else
+        //    generationSinceLastReplacement++;
+
+        if (sacrifice->getFitness( ) > individuals[sacrificeID]->getFitness( )) {
+            delete individuals[sacrificeID];
+            individuals[sacrificeID] = new Chromosome(sacrifice);
+        }
+
+        if (DEBUG_LO) {
+            cout << "Current State" << endl;
+            for (int i = 0; i < population_size; ++i) {
+                cout << "Individual " << i << endl;
+                cout << individuals[i]->print( );
+            }
+            cout
+                << "-----------------------------------------------------------"
+                << endl;
+        }
+
+
+    }
+    for (int j = 0; j < population_size; ++j) {
+        if (individuals[j]->getFitness( ) < individuals[weakestIndividualID]->getFitness( )) {
+            weakestIndividualID = j;
+        }
+        if (individuals[j]->getFitness( ) > individuals[strongestIndividualID]->getFitness( )) {
+            strongestIndividualID = j;
+        }
+    }
+    cout << "(LO)" << i << ",";
+    cout << GetFitnessData( );
+    return i;
+}
+
 void Population::Evolve( ) {
     int generationSinceLastReplacement = 0;
 
     int i = 1;
-    for (i = 0;
-         i <= generation_count
-         && generationSinceLastReplacement < replacement_wait; ++i) {
+    for (i = 0; i <= generation_count; ++i) {
+
+        if (generationSinceLastReplacement >= replacement_wait) {
+            i = localOptimization(i);
+            generationSinceLastReplacement = 0;
+            continue;
+        }
+
         if (DEBUG_EVOLVE) {
             if (generationSinceLastReplacement <= 1) {
                 cout << "Current Generation: " << i
@@ -734,8 +847,6 @@ void Population::Evolve( ) {
         Chromosome * sacrifice = new Chromosome(individuals[sacrificeID]);
 
         if (DEBUG_EVOLVE) {
-            /*for (int i = 0; i < population_size; i++)
-            cout << individuals[i]->print( ) << endl << "************************************" << endl;*/
             cout << "Sacrifice source: " << sacrificeID << endl;
             cout << "Sacrifice: " << endl << sacrifice->print( ) << "Source: "
                 << endl << individuals[sacrificeID]->print( ) << endl;
@@ -751,7 +862,7 @@ void Population::Evolve( ) {
                                  timeSlots, professor_count, timeslot_count, profSectionsTaught);
 
         if (sacrifice->getFitness( )
-         > individuals[weakestIndividualID]->getFitness( )) {
+    > individuals[weakestIndividualID]->getFitness( )) {
             if (DEBUG_EVOLVE) {
                 if (DEBUG_EVOLVE && generationSinceLastReplacement > 1) {
                     cout << endl << "Current Generation: " << i
@@ -778,6 +889,7 @@ void Population::Evolve( ) {
                 cout << "New weakest: " << endl;
             }
 
+            delete individuals[weakestIndividualID];
             individuals[weakestIndividualID] = new Chromosome(sacrifice);
 
             if (DEBUG_EVOLVE)
@@ -793,7 +905,6 @@ void Population::Evolve( ) {
                     strongestIndividualID = j;
                 }
             }
-
         } else
             generationSinceLastReplacement++;
 
@@ -843,8 +954,8 @@ string Population::GetFitnessData( ) {
         allFitness[i - 1] = individuals[i]->getFitness( );
         s << individuals[i]->getFitness( ) << ",";
     }
-    double mean = Utility::CalculateMean(allFitness, population_size-1);
-    double sd = Utility::StandardDeviation(allFitness, population_size-1, mean);
+    double mean = Utility::CalculateMean(allFitness, population_size - 1);
+    double sd = Utility::StandardDeviation(allFitness, population_size - 1, mean);
     s << mean << "," << sd;
     s << ";\n";
     return s.str( );
