@@ -3,7 +3,7 @@
 
 int main( ) {
     Population p("new_input.dat");
-    cout << "Begin Evolution" << endl;
+    //cout << "Begin Evolution" << endl;
     p.Evolve( );
     cout << endl << "End Evolution" << endl;
     cout << "*********************************************************************" << endl;

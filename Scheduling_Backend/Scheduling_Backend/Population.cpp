@@ -139,6 +139,13 @@ void Population::readDatFiles( ) {
     inFile.close( );
 
     cout << endl << "Initial Setup Complete" << endl << endl;
+    cout << "Generation, ";
+    for (int x = 0; x < population_size; ++x) {
+        cout << to_string(x) << ",";
+    }
+
+    cout << "Mean, SD;" << endl;
+
     cout << "0," << GetFitnessData( ) << endl;
 } //end readDatFiles()
 
@@ -468,15 +475,11 @@ void Population::readInitialSchedule(ifstream &inFile) {
             Utility::LowerCase(currLine);
             tokenizedVersion = Utility::Tokenize(currLine, ',');
 
-            //			individuals[0]->setProf(geneLocation, stoi(tokenizedVersion.at(1)),
-            //					sectionCredit[geneLocation]);
-            //			individuals[0]->setTime(geneLocation, stoi(tokenizedVersion.at(2)));
             Gene current(stoi(tokenizedVersion.at(1)),
                          stoi(tokenizedVersion.at(2)));
             individuals[0]->setGene(geneLocation, current);
             individuals[0]->setProf(geneLocation, stoi(tokenizedVersion.at(1)),
                                     sectionCredit[geneLocation]);
-            //individuals[0]->setTime(geneLocation, stoi(tokenizedVersion.at(2)));
             geneLocation++;
         }
         if (DEBUG_INIT_CHROMOSOME)
@@ -836,17 +839,14 @@ string Population::PrintTableFormat( ) {
 string Population::GetFitnessData( ) {
     int * allFitness = new int[population_size - 2];
     stringstream s;
-    for (int i = 1; i < population_size - 1; ++i) {
+    for (int i = 0; i < population_size; ++i) {
         allFitness[i - 1] = individuals[i]->getFitness( );
         s << individuals[i]->getFitness( ) << ",";
     }
-    double mean = Utility::CalculateMean(allFitness, population_size - 2);
-    double sd = Utility::StandardDeviation(allFitness, population_size - 2,
-                                           mean);
-    s
-        << /*"\n Min: " << lowestFitnessSeen << " Max: " << highestFitnessSeen << */"\n Mean: "
-        << mean << ", SD: " << sd;
-    s << "\n";
+    double mean = Utility::CalculateMean(allFitness, population_size-1);
+    double sd = Utility::StandardDeviation(allFitness, population_size-1, mean);
+    s << mean << "," << sd;
+    s << ";\n";
     return s.str( );
 }
 
@@ -899,16 +899,21 @@ ostream & operator<<(ostream & os, const Population &source) {
                 maxFitness = source.individuals[i]->getFitness( );
             }
         }
-
-        os << "\n\nStrongest Valid Individual: " << maxFitID << endl;
-        os
-            << source.individuals[maxFitID]->printTable(source.timeSlots,
-            source.timeslot_count);
-        os << "Fitnesss: " << maxFitness << endl;
-        os << "Valid: " << (validFound ? "Yes" : "No") << endl;
-        os << "Professor Credits: "
-            << source.individuals[maxFitID]->getProfessorLoads( ) << endl;
-
+        if (maxFitness == 0) {
+            maxFitness = source.individuals[maxFitID]->getFitness( );
+        }
+        if (maxFitness < source.individuals[source.strongestIndividualID]->getFitness( )) {
+            os << "\n\n Strongest individual is the that was found.\n" << endl;
+        } else {
+            os << "\n\nStrongest Valid Individual: " << maxFitID << endl;
+            os
+                << source.individuals[maxFitID]->printTable(source.timeSlots,
+                source.timeslot_count);
+            os << "Fitnesss: " << maxFitness << endl;
+            os << "Valid: " << (validFound ? "Yes" : "No") << endl;
+            os << "Professor Credits: "
+                << source.individuals[maxFitID]->getProfessorLoads( ) << endl;
+        }
     } else {
         os << "Strongest was valid." << endl;
 

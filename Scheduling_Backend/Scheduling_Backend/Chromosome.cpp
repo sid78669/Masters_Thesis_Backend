@@ -215,7 +215,7 @@ void Chromosome::mutate(int ** sectionProf, int section_count,
                     max_tries--;
                     if (max_tries < 0)
                         break;
-                } while (professorCredits[profID] - sectionCredit[g] < (-1 * DELTA_MAX));
+                } while ((professorCredits[profID] - sectionCredit[g]) < DELTA_MAX);// -4.0 && (professorCredits[profID] - sectionCredit[g]) < 1.0);
             } else
                 profID = 1;
             setProf(g, sectionProf[g][profID], sectionCredit[g]);
@@ -351,6 +351,47 @@ void Chromosome::repair(int ** sectionProf, int section_count,
             cout << "Try " << tries << ": Any Repairs? "
             << currentIterationRepaired << endl;
     } while (++tries < REPAIR_TRIES && currentIterationRepaired);
+    tries = 0;
+    //We want to ensure that the professors are assigned credits within an acceptable range.
+    do {
+        for (int profIndex = 0; profIndex < prof_count; profIndex++) {
+            //Check if the professor is overloaded or under loaded.
+            int professorIteration = REPAIR_TRIES;
+            while (professorCredits[profIndex] < DELTA_MAX && professorCredits[profIndex > DELTA_MIN] && professorIteration > 0) {
+                professorIteration--;
+                //Create a list of all courses being taught by the professor
+                //Just like courses, ensure that the professor being assinged to the new course has an id greater than the current prof.
+                //If we accidently make a change that breaks something, hopefully, it will be fixed on another try.
+                currentIterationRepaired = true;
+                //Array cannot have more sections than the total sections we have.
+                int * sectionsTaughtByProf = new int[section_count];
+                int stbpCount = 0;
+                for (int section = 0; section < section_count; ++section) {
+                    if (genes[section]->getProfID( ) == profIndex) {
+                        sectionsTaughtByProf[stbpCount] = section;
+                    }
+                }
+                //Find a professor that can replace one course.
+                for (int rep = 0; rep < stbpCount; ++rep) {
+                    if (sectionProf[sectionsTaughtByProf[rep]][0] >= 2) {
+                        int compProf = sectionProf[sectionsTaughtByProf[rep]][0];
+                        compProf = h->randNum(0, compProf);
+                        if (professorCredits[compProf] - sectionCred[rep] >= DELTA_MAX) {
+                            professorCredits[profIndex] +=
+                                sectionCred[sectionsTaughtByProf[rep]];
+                            professorCredits[compProf] -= sectionCred[rep];
+                            genes[rep]->setProfID(compProf);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (tries > 0 && DEBUG_REPAIR)
+            cout << "Try " << tries << ": Any Repairs? "
+            << currentIterationRepaired << endl;
+    } while (++tries < REPAIR_TRIES && currentIterationRepaired);
 
     if (DEBUG_REPAIR)
         cout << "Gene Repaired to the best of the abilities..." << endl;
@@ -393,7 +434,7 @@ void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref,
 
     //Check to ensure no prof has been assigned more than his share of courses
     for (int p = 0; p < prof_count; p++) {
-        if (professorCredits[p] < (DELTA_MAX*-1) && professorCredits[p] > DELTA_MIN) {
+        if (professorCredits[p] < 0){//> (-4.0) && professorCredits[p] < 1.0) {
             if (DEBUG_FITNESS)
                 cout << "Professor Overload: " << p << endl;
             fitness -= MAX_FITNESS / gene_length;
@@ -439,7 +480,7 @@ void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref,
                 ; //cout << "Allotment: " << profPref[genes[secID].getProfID( )][timeAlloted] << " Penalty: " << MAX_FITNESS << "/" << pow(prof_count + gene_length, 2.0) << " = " << MAX_FITNESS / pow((prof_count + gene_length), 2.0) << endl;
             }
             fitness -= profPref[genes[secID]->getProfID( )][timeAlloted]
-                * MAX_FITNESS / pow((prof_count + gene_length), 2.0);
+                * MAX_FITNESS / (int)pow((prof_count + gene_length), 2.0);
         } else {
             fitness -= MAX_FITNESS;
         }
@@ -453,7 +494,7 @@ void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref,
             (timeSlots[genes[secID]->getTimeID( )]->isAfternoon( ) ?
             1 : 2);
         fitness -= sectionPref[secID][timeAlloted] * MAX_FITNESS
-            / pow((prof_count + gene_length), 2.0);
+            / (int)pow((prof_count + gene_length), 2.0);
     }
 
     if (DEBUG_FITNESS)

@@ -5,8 +5,8 @@
 #define DEBUG_FITNESS 0
 #define DEBUG_ASSIGNMENT 0
 #define DEBUG_MUTATION 0
-#define DELTA_MIN 1
-#define DELTA_MAX 4
+#define DELTA_MAX -4.0
+#define DELTA_MIN 1.0
 
 #include "Gene.h"
 #include "Helper.h"
