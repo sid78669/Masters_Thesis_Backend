@@ -41,10 +41,11 @@ public:
     friend ostream & operator<<(ostream & os, const Population &source);
 private:
     string data_file_path;
+    double mutation_probability; 
+    double initFitness;
     int population_size;
     int generation_count;
     int replacement_wait;
-    double mutation_probability;
     int section_count;
     int course_count;
     int professor_count;

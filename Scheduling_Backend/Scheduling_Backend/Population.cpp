@@ -494,7 +494,8 @@ void Population::readInitialSchedule(ifstream &inFile) {
 
     cout << "Prof Rating: " << endl << individuals[0]->getProfessorLoads( )
         << endl;
-
+    initFitness = (individuals[0]->getFitness( ) *100.0 / MAX_FITNESS*1.0);
+    cout << "Initial Schedule Fitness: " << initFitness << "%" << endl;
     cout << "First Chromosome Initialized..." << endl;
 }
 
@@ -708,7 +709,7 @@ bool Population::validateChromosome(Chromosome * const toValidate) const {
 }
 
 int Population::localOptimization(int currentGeneration) {
-    cout << "Intiate Local Optimization...." << endl;
+    //cout << "Intiate Local Optimization...." << endl;
 
     int generationSinceLastReplacement = 0;
 
@@ -810,7 +811,7 @@ int Population::localOptimization(int currentGeneration) {
             strongestIndividualID = j;
         }
     }
-    cout << "(LO)" << i << ",";
+    cout << i << ",";
     cout << GetFitnessData( );
     return i;
 }
@@ -962,6 +963,7 @@ string Population::GetFitnessData( ) {
 }
 
 ostream & operator<<(ostream & os, const Population &source) {
+    double strongestFitness = (source.individuals[source.strongestIndividualID]->getFitness( )*100.0 / MAX_FITNESS*1.0);
     if (PRINT_WHOLE_POPULATION) {
         os << "Printing Current Population..." << endl;
         int* fitnessValues = new int[source.population_size];
@@ -988,9 +990,10 @@ ostream & operator<<(ostream & os, const Population &source) {
     os
         << source.individuals[source.strongestIndividualID]->printTable(
         source.timeSlots, source.timeslot_count);
-    os << "Fitnesss: "
-        << source.individuals[source.strongestIndividualID]->getFitness( )
+    os << "Fitness: "
+        << strongestFitness << "%"
         << endl;
+    os << "Improvement from Initial Schedule: " << (strongestFitness*100.0 / source.initFitness) << "%" << endl;
     bool strongestValidity = source.validateChromosome(
         source.individuals[source.strongestIndividualID]);
     os << "Valid: " << (strongestValidity ? "Yes" : "No") << endl;
@@ -999,7 +1002,7 @@ ostream & operator<<(ostream & os, const Population &source) {
         << endl;
 
     if (!strongestValidity) {
-
+        double strongestValid = 0.0;
         int maxFitness = 0, maxFitID = 0;
         bool validFound = false;
         for (int i = 0; i < source.population_size; ++i) {
@@ -1016,14 +1019,16 @@ ostream & operator<<(ostream & os, const Population &source) {
         if (maxFitness < source.individuals[source.strongestIndividualID]->getFitness( )) {
             os << "\n\n Strongest individual is the that was found.\n" << endl;
         } else {
+            strongestValid = (maxFitness*100.0 / MAX_FITNESS*1.0);
             os << "\n\nStrongest Valid Individual: " << maxFitID << endl;
             os
                 << source.individuals[maxFitID]->printTable(source.timeSlots,
                 source.timeslot_count);
-            os << "Fitnesss: " << maxFitness << endl;
+            os << "Fitnesss: " << strongestValid << "%" << endl;
             os << "Valid: " << (validFound ? "Yes" : "No") << endl;
             os << "Professor Credits: "
                 << source.individuals[maxFitID]->getProfessorLoads( ) << endl;
+            os << "Improvement from Initial Schedule: " << (strongestValid*100.0 / source.initFitness) << "%" << endl;
         }
     } else {
         os << "Strongest was valid." << endl;
