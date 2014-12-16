@@ -1,5 +1,5 @@
 //START*PARAMETERS*
-10000
+5000
 50
 100
 5
@@ -94,43 +94,43 @@ math140, 4, cmpsc121,
 *END*COURSE*
 //*START*PROFESSOR*
 //profid, maxcredit, courses[, courses]
-0, 15, cmpsc200, math026, stat200, math220
+0, 18, math026, stat200, math220
 1, 9, cmpsc121, cmpsc221
-2, 15, cmpsc421, cmpsc444, cmpsc412, cmpsc462
-3, 17, math430, math140, math475w, math022
-4, 14, math250, math022
-5, 6, comp505
-6, 11, math141, math140
-7, 6, math004
-8, 20, math140, math250, math220
-9, 9, math041, math022
-10, 12, comp516, cmpsc122, cmpsc470
-11, 16, math141, math041, math220
+2, 12, cmpsc421, cmpsc444, cmpsc412, cmpsc462
+3, 10, math430, math140, math475w, math022
+4, 20, math250, math022
+5, 3, comp505
+6, 8, math141, math140
+7, 3, math004
+8, 12, math140, math250, math220
+9, 6, math041, math022
+10, 9, comp516, cmpsc122, cmpsc470
+11, 13, math141, math041, math220
 12, 6, cmpsc200
-13, 17, math230, math140, math110
-14, 7, math140
+13, 12, math230, math140, math110
+14, 4, math140
 15, 13, stat460, stat200, stat401
-16, 19, stat200, math140
+16, 12, stat200, math140
 17, 10, math140, math022
 18, 14, cmpsc101, math110
-19, 21, math230, math141, math110
-20, 7, cmpsc487w
-21, 13, math021, math140, math435
-22, 6, cmpsc121
-23, 6, math026
-24, 6, math003
-25, 6, math021
-26, 12, comp519, cmpsc472, comp594
-27, 9, math004, math022
-28, 12, math021, cmpsc121
+19, 14, math230, math141, math110
+20, 3, cmpsc487w
+21, 10, math021, math140, math435
+22, 3, cmpsc121
+23, 3, math026
+24, 3, math003
+25, 3, math021
+26, 9, comp519, cmpsc472, comp594
+27, 3, math004, math022
+28, 3, math021, cmpsc121
 29, 14, math230, math449, math220
-30, 18, stat200, stat401
-31, 6, math022
-32, 9, math318, math315
-33, 9, cmpsc360
-34, 6, math200
-35, 6, math041
-36, 18, math021, math017, math035
+30, 12, stat200, stat401
+31, 3, math022
+32, 6, math318, math315
+33, 6, cmpsc360
+34, 3, math200
+35, 3, math041
+36, 12, math021, math017, math035
 *END*PROFESSOR*
 //*START*TIMESLOT*
 //timeslot_id	, credit rating, monday		, tuesday		, wednesday		, thursday		, friday		, saturday

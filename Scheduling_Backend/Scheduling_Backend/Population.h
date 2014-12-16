@@ -63,12 +63,13 @@ private:
     int ** incompatibleSections;
     int ** creditTimeSlot;
     int ** sectionProf;
+    int ** profSection;
     int ** courseSection;
     int ** sectionPref;
     int ** profPref;
     double * sectionCredit;
     bool * individualValidity;
-    int * profSectionsTaught;
+    //int * profSectionsTaught;
     double * profCreditMax;
 
     void readDatFiles( );

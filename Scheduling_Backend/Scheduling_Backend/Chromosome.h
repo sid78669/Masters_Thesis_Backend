@@ -6,7 +6,7 @@
 #define DEBUG_ASSIGNMENT 0
 #define DEBUG_MUTATION 0
 #define DELTA_MAX -4.0
-#define DELTA_MIN 1.0
+#define DELTA_MIN 3.0
 
 #include "Gene.h"
 #include "Helper.h"
@@ -33,7 +33,7 @@ public:
     void setTime(int geneID, int newTime);
     void setProf(int geneID, int newProf, double courseCred);
     void setGene(int geneID, Gene);
-    void setProfCredit(int * profCreds);
+    //void setProfCredit(int * profCreds);
     double getCourseLoad(int profID);
     const int getTime(int geneID);
     const int getProf(int geneID);
@@ -45,21 +45,26 @@ public:
     string getProfessorLoads( );
     string print(int gene);
     string printTable(TimeSlot ** timeSlots, int timeslot_count);
+    string printTable(TimeSlot ** timeSlots, int timeslot_count, double * sectionCredit);
 
     void mutate(int ** sectionProf, int section_count, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, double mutation_probability, double * sectionCredit);
-    void repair(int ** sectionProf, int section_count, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, int ** incompatibleSections, const int REPAIR_TRIES, double * sectionCredit);
-    void updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots, int prof_count, int timeslot_count, int * profSectionsTaught);
+    void repair(int ** sectionProf, int section_count, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, int ** incompatibleSections, const int REPAIR_TRIES, double * sectionCredit, int ** profSection);
+    void updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots, int prof_count, int timeslot_count, int ** profSectionsTaught);
 
     friend bool operator==(Chromosome &ch1, Chromosome &ch2);
 
 private:
     Gene ** genes;
     double * professorCredits;
+    double * professorCreditsInitial;
     int gene_length;
     int prof_count;
     int fitness;
-    string printHeader( );
-    string printHLine(int width);
+    void updateProfLoad( double * sectionCredit );
+    bool validProfessorLoad(int profID);
+    bool validProfessorLoadChange(int profID, double creditChange);
+    //string printHeader( );
+    //string printHLine(int width);
 };
 
 #endif
