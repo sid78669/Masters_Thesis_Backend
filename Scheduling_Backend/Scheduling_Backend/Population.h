@@ -69,7 +69,6 @@ private:
     int ** profPref;
     double * sectionCredit;
     bool * individualValidity;
-    //int * profSectionsTaught;
     double * profCreditMax;
 
     void readDatFiles( );

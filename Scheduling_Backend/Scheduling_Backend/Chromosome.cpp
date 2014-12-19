@@ -140,7 +140,7 @@ bool Chromosome::validProfessorLoad(int p) {
 }
 
 bool Chromosome::validProfessorLoadChange(int p, double credit) {
-    return ((professorCredits[p] - credit) >= DELTA_MAX && (professorCredits[p] - credit) <= DELTA_MIN);
+    return ((professorCredits[p] - credit) >= DELTA_MAX || (professorCredits[p] - credit) <= DELTA_MIN);
 }
 
 string Chromosome::print( ) {
@@ -316,8 +316,6 @@ void Chromosome::repair(int ** sectionProf, int section_count, int ** creditTime
             while (professorCredits[profIndex] < DELTA_MAX && professorIteration > 0) {
                 professorIteration--;
                 //Create a list of all courses being taught by the professor
-                //Just like courses, ensure that the professor being assinged to the new course has an id greater than the current prof.
-                //If we accidently make a change that breaks something, hopefully, it will be fixed on another try.
                 currentIterationRepaired = true;
                 //Array cannot have more sections than the total sections we have.
                 int * sectionsTaughtByProf = new int[section_count];
@@ -331,7 +329,6 @@ void Chromosome::repair(int ** sectionProf, int section_count, int ** creditTime
                 for (int stbpReplaceIndex = 0; stbpReplaceIndex < stbpCount && !validProfessorLoad(profIndex); ++stbpReplaceIndex) {
                     //section we are modifying
                     int sectionModified = sectionsTaughtByProf[stbpReplaceIndex];
-
                     //if more than one professor can teach this course, then replace.
                     if (sectionProf[sectionModified][0] >= 2) {
                         int compProf = sectionProf[sectionModified][0];
@@ -357,41 +354,15 @@ void Chromosome::repair(int ** sectionProf, int section_count, int ** creditTime
                 for (int currentTaught = 1; currentTaught <= profSection[profIndex][0]; ++currentTaught) {
                     //check if the current prof is overloaded
                     int potentialReplacement = getProf(profSection[profIndex][currentTaught]);
-                    if (professorCredits[potentialReplacement] < 0) {
+                    if (professorCredits[potentialReplacement] < DELTA_MAX) {
                         //We chose 0 instead of DELTA_MAX because the closer a professor has to the correct course load, the better.
-                        if (professorCredits[profIndex] - sectionCred[profSection[profIndex][currentTaught]] >= DELTA_MAX) {
-                            setProf(profSection[profIndex][currentTaught], profIndex, sectionCred[profSection[profIndex][currentTaught]]);
+                        if ((professorCredits[potentialReplacement] - sectionCred[profSection[profIndex][currentTaught]]) >= DELTA_MAX) {
+                            setProf(profSection[profIndex][currentTaught], potentialReplacement, sectionCred[profSection[profIndex][currentTaught]]);
                         }
                     }
+                    updateProfLoad(sectionCred);
                 }
-
-                //Array cannot have more sections than the total sections we have.
-                //int * sectionsTaughtByProf = new int[section_count];
-                //int stbpCount = 0; //Section taught by professor
-                //for (int section = 0; section < section_count; ++section) {
-                //    if (genes[section]->getProfID( ) == profIndex) {
-                //        sectionsTaughtByProf[stbpCount] = section;
-                //    }
-                //}
-                ////Find a professors that can replace courses till this professor has acceptable course load.
-                //for (int stbpReplaceIndex = 0; stbpReplaceIndex < stbpCount && !validProfessorLoad(profIndex); ++stbpReplaceIndex) {
-                //    //section we are modifying
-                //    int sectionModified = sectionsTaughtByProf[stbpReplaceIndex];
-                //    //if more than one professor can teach this course, then replace.
-                //    if (sectionProf[sectionModified][0] >= 2) {
-                //        int compProf = sectionProf[sectionModified][0];
-                //        compProf = h->randNum(1, compProf);
-                //        if (find(tabooProf[sectionModified].begin( ), tabooProf[sectionModified].end( ), compProf) == tabooProf[sectionModified].end( )
-                //            && validProfessorLoadChange(compProf, sectionCred[sectionModified])) {
-                //            setProf(sectionModified, compProf, sectionCred[sectionModified]);
-                //            tabooProf[sectionModified].push_back(profIndex);
-                //            break;
-                //        }
-                //    }
-                //    updateProfLoad(sectionCred);
-                //}
-                //updateProfLoad(sectionCred);
-                //delete[] sectionsTaughtByProf;
+                updateProfLoad(sectionCred);
             }
         }
 
@@ -442,7 +413,7 @@ void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref,
 
     //Check to ensure no prof has been assigned more than his share of courses
     for (int p = 0; p < prof_count; p++) {
-        if (!validProfessorLoad(p)) {
+        if (professorCredits[p] != 0) {
             if (DEBUG_FITNESS) {
                 cout << "Professor Overload: " << p << endl;
             }
@@ -544,55 +515,18 @@ string Chromosome::printTable(TimeSlot ** timeSlots, int timeslot_count) {
     return ss.str( );
 }
 
-//string Chromosome::printHeader( ) {
-//    const int columnWidth = 12;
-//    //const char seperator = ' ';
-//
-//    string rtnVal = "", currVal = "";
-//
-//    currVal = " Time";
-//    currVal.resize(columnWidth, ' ');
-//    rtnVal += currVal + "|";
-//
-//    currVal = " Monday";
-//    currVal.resize(columnWidth, ' ');
-//    rtnVal += currVal + "|";
-//
-//    currVal = " Tuesday";
-//    currVal.resize(columnWidth, ' ');
-//    rtnVal += currVal + "|";
-//
-//    currVal = " Wednesday";
-//    currVal.resize(columnWidth, ' ');
-//    rtnVal += currVal + "|";
-//
-//    currVal = " Thursday";
-//    currVal.resize(columnWidth, ' ');
-//    rtnVal += currVal + "|";
-//
-//    currVal = " Friday";
-//    currVal.resize(columnWidth, ' ');
-//    rtnVal += currVal + "|";
-//
-//    currVal = " Saturday";
-//    currVal.resize(columnWidth, ' ');
-//    rtnVal += currVal + "|";
-//
-//    return rtnVal;
-//}
+string Chromosome::printProfTable( ) {
+    ostringstream ss;
+    string * profs = new string[prof_count]( );
+    for (int i = 0; i < gene_length; ++i) {
+        profs[getProf(i)] += i + ", ";
+    }
+    for (int i = 0; i < prof_count; ++i) {
+        ss << i << ": " << profs[i] << "[" << professorCredits[i] << "]" << endl;
+    }
 
-//string Chromosome::printHLine(int lineWidth) {
-//    string rtnVal = "";
-//    rtnVal.resize(lineWidth, '-');
-//    rtnVal += "\n";
-//    return rtnVal;
-//}
-
-//void Chromosome::setProfCredit(int * profCreds) {
-//    for (int x = 0; x < prof_count; x++) {
-//        professorCredits[x] = profCreds[x];
-//    }
-//}
+    return ss.str( );
+}
 
 bool operator==(Chromosome &ch1, Chromosome &ch2) {
     if (ch1.gene_length != ch2.gene_length)

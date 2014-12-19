@@ -2,7 +2,7 @@
 
 //Population::Population(string dataFilePath, int populationSize, int generationCount, int replacementWait, double mutationProbability) {
 Population::Population(string dataFilePath) :
-REPAIR_TRIES(10) {
+REPAIR_TRIES(15) {
     data_file_path = dataFilePath;
     population_size = 0;
     generation_count = 0;
@@ -111,6 +111,20 @@ void Population::readDatFiles( ) {
     readProfessorList(inFile, courses);
     cout << endl;
     profPref = new int*[professor_count];
+
+    double courseSum = 0;
+    //Sum total credits for courses
+    for (int sec = 0; sec < section_count; ++sec) {
+        courseSum += sectionCredit[sec];
+    }
+
+    //Sum total credits for prof
+    double profSum = 0;
+    for (int prof = 0; prof < professor_count; ++prof) {
+        profSum += profCreditMax[prof];
+    }
+
+    cout << "Course Sum: " << courseSum << " Prof Sum: " << profSum << endl;
 
     //The only thing left for initial data, other than an initial chromosome, is timeslots.
     readTimeSlotList(inFile);
@@ -233,7 +247,7 @@ This method will readh the course data file. It will then populate the incompati
 */
 void Population::readCourseList(ifstream &inFile, vector<string> courseList) {
     cout << "Starting reading courses..." << endl;
-    //ifstream inFile(data_file_path + "/courses.dat");
+
     string currLine;
     vector<string> tokenizedVersion;
     if (inFile.is_open( )) {
@@ -247,9 +261,6 @@ void Population::readCourseList(ifstream &inFile, vector<string> courseList) {
             tokenizedVersion = Utility::Tokenize(currLine, ',');
 
             //Find the courseID
-            /*int courseLoc = 0;
-            while (courseList.at(courseLoc).compare(tokenizedVersion.at(0)) != 0)
-            courseLoc++;*/
             int courseLoc = find(courseList.begin( ), courseList.end( ),
                                  tokenizedVersion.at(0)) - courseList.begin( );
 
@@ -261,9 +272,6 @@ void Population::readCourseList(ifstream &inFile, vector<string> courseList) {
                 for (int inc = 2; inc < (signed) tokenizedVersion.size( );
                      ++inc) {
                     //Find the courseID
-                    /*int currIncomp = 0;
-                    while (courseList.at(currIncomp).compare(tokenizedVersion.at(inc)) != 0)
-                    currIncomp++;*/
                     int currIncomp = find(courseList.begin( ), courseList.end( ),
                                           tokenizedVersion.at(0)) - courseList.begin( );
 
@@ -291,8 +299,7 @@ void Population::readCourseList(ifstream &inFile, vector<string> courseList) {
                 sectionCredit[sectionID] = cred;
 
                 //Copy all the incompatible sections over.
-                incompatibleSections[sectionID] = new int[incompatibles.size( )
-                    + 1];
+                incompatibleSections[sectionID] = new int[incompatibles.size( ) + 1];
                 incompatibleSections[sectionID][0] = incompatibles.size( );
                 for (int j = 1; j <= (signed) incompatibles.size( ); ++j) {
                     if (DEBUG_COURSES)
@@ -306,8 +313,7 @@ void Population::readCourseList(ifstream &inFile, vector<string> courseList) {
         } //end while
     } //end if
 
-    cout << "Finished reading courses. Updated " << course_count
-        << " new courses." << endl;
+    cout << "Finished reading courses. Updated " << course_count << " new courses." << endl;
 } //end readCourseList
 
 void Population::readProfessorList(ifstream &inFile,
@@ -332,8 +338,7 @@ void Population::readProfessorList(ifstream &inFile,
             tokenizedVersion.erase(tokenizedVersion.begin( ));
             maxCredits.push_back(stod(tokenizedVersion[0]));
             tokenizedVersion.erase(tokenizedVersion.begin( ));
-            for (int courseLoc = 0;
-                 courseLoc < (signed) tokenizedVersion.size( ); ++courseLoc) {
+            for (int courseLoc = 0; courseLoc < (signed) tokenizedVersion.size( ); ++courseLoc) {
                 int courseID = find(courseList.begin( ), courseList.end( ),
                                     tokenizedVersion.at(courseLoc)) - courseList.begin( );
                 if (DEBUG_PROF)
@@ -349,7 +354,7 @@ void Population::readProfessorList(ifstream &inFile,
             }
             professor_count++;
         }
-        //profSectionsTaught = new int[professor_count]( );
+
         profSection = new int *[section_count];
         profCreditMax = new double[professor_count]( );
         vector<int> * profSectionVector = new vector<int>[professor_count];
@@ -365,7 +370,6 @@ void Population::readProfessorList(ifstream &inFile,
             for (auto sp : secProfs[i]) {
                 sectionProf[i][cntr++] = sp;
                 profSectionVector[sp].push_back(i);
-                //profSectionsTaught[sp]++;
                 if (DEBUG_PROF)
                     cout << sp << ", ";
             }
@@ -675,9 +679,8 @@ void Population::readProfPref(ifstream &inFile) {
 bool Population::validateChromosome(Chromosome * const toValidate) const {
     bool valid = true;
     /*
-    In this method, I am just looking for any hard conflicts. First, I will try to ensure that
-    a professor is not scheduled twice at the same time. Then, I will look to ensure that no incompatible
-    classes are scheduled at the same time.
+    First, I will try to ensure that a professor is not scheduled twice at the same time.
+    Then, I will look to ensure that no incompatible classes are scheduled at the same time.
     */
 
     for (int left = 0; left < section_count && valid; ++left) {
@@ -1010,16 +1013,15 @@ ostream & operator<<(ostream & os, const Population &source) {
         << strongestFitness << "%"
         << endl;
     double improvement = (strongestFitness + abs(source.initFitness)) *100.0 / abs(source.initFitness);
-    
+
     if (improvement < 0)
         improvement *= -1.0;
     os << "Improvement from Initial Schedule: " << improvement << "%" << endl;
     bool strongestValidity = source.validateChromosome(
         source.individuals[source.strongestIndividualID]);
     os << "Valid: " << (strongestValidity ? "Yes" : "No") << endl;
-    os << "Professor Credits: "
-        << source.individuals[source.strongestIndividualID]->getProfessorLoads( )
-        << endl;
+    //os << "Professor Credits: "<< source.individuals[source.strongestIndividualID]->getProfessorLoads( )<< endl;
+    os << "Professor Schedule: " << endl << source.individuals[source.strongestIndividualID]->printProfTable( ) << endl;
 
     if (!strongestValidity) {
         double strongestValid = 0.0;
@@ -1047,8 +1049,9 @@ ostream & operator<<(ostream & os, const Population &source) {
                 source.timeslot_count, source.sectionCredit);
             os << "Fitnesss: " << strongestValid << "%" << endl;
             os << "Valid: " << (validFound ? "Yes" : "No") << endl;
-            os << "Professor Credits: "
-                << source.individuals[maxFitID]->getProfessorLoads( ) << endl;
+            /*os << "Professor Credits: "
+                << source.individuals[maxFitID]->getProfessorLoads( ) << endl;*/
+            os << "Professor Schedule: " << endl << source.individuals[maxFitID]->printProfTable( ) << endl;
             os << "Improvement from Initial Schedule: " << (strongestValid*100.0 / source.initFitness) << "%" << endl;
         }
     } else {
