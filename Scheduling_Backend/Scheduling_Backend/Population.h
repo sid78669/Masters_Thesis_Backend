@@ -71,6 +71,10 @@ private:
     bool * individualValidity;
     double * profCreditMax;
 
+    ofstream statFile;
+    ofstream outputFile;
+    ofstream debug;
+
     void readDatFiles( );
     void readSectionList(ifstream &input, vector<string> &);
     void readCourseList(ifstream &input, vector<string>);

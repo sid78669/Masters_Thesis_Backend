@@ -17,10 +17,22 @@ REPAIR_TRIES(15) {
     timeslot_count = 0;
     //Setup the Individuals array
     readDatFiles( );
+    statFile.open("stat.txt", ofstream::out);
+    debug.open("debug.txt", ofstream::out);
+    outputFile.open("output.txt", ofstream::out);
 
 } //end Constructor
 
 Population::~Population( ) {
+    if (statFile.is_open( ))
+        statFile.close( );
+
+    if (debug.is_open( ))
+        debug.close( );
+
+    if (outputFile.is_open( ))
+        outputFile.close( );
+
     if (individuals) {
         for (int i = 0; i < population_size; ++i) {
             delete individuals[i];
@@ -849,7 +861,7 @@ void Population::Evolve( ) {
 
         if (DEBUG_EVOLVE) {
             if (generationSinceLastReplacement <= 1) {
-                cout << "Current Generation: " << i
+                debug << "Current Generation: " << i
                     << " Generations since last replacement: "
                     << generationSinceLastReplacement;
                 if (generationSinceLastReplacement == 1) {
