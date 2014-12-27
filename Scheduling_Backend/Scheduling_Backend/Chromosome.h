@@ -9,6 +9,7 @@
 #define DELTA_MIN 2.0
 #define MAX_FITNESS 100000
 
+#include "Utility.h"
 #include "Gene.h"
 #include "Helper.h"
 #include "TimeSlot.h"
@@ -50,7 +51,7 @@ public:
 
     void mutate(int ** sectionProf, int section_count, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, double mutation_probability, double * sectionCredit);
     void repair(int ** sectionProf, int section_count, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, int ** incompatibleSections, const int REPAIR_TRIES, double * sectionCredit, int ** profSection);
-    void updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots, int prof_count, int timeslot_count, int ** profSectionsTaught);
+    void updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots, int timeslot_count, int ** profSectionsTaught);
 
     friend bool operator==(Chromosome &ch1, Chromosome &ch2);
 

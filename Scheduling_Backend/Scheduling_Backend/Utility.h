@@ -1,6 +1,9 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
+#include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -20,7 +23,7 @@ public:
     }
 
     static void LowerCase(string &toLower) {
-        int len = toLower.length( );
+        int len = toLower.length();
         for (int i = 0; i < len; i++) {
             if (toLower[i] > 64 && toLower[i] < 91)
                 toLower[i] += 32;
@@ -36,15 +39,15 @@ public:
             tokenList.push_back(toTokenize.substr(0, toTokenize.find(token)));
             toTokenize.erase(0, toTokenize.find(token) + 1);
         }
-        if (!toTokenize.empty( ))
+        if (!toTokenize.empty())
             tokenList.push_back(toTokenize);
         return tokenList;
     }
 
     static void RemoveChar(string &str, char toRemove) {
-        str.erase(std::remove(str.begin( ), str.end( ), toRemove), str.end( ));
+        str.erase(std::remove(str.begin(), str.end(), toRemove), str.end());
     }
-    
+
     static double CalculateMean(int values[], int size) {
         double sum = 0.0;
         for (int i = 0; i < size; ++i) {
@@ -63,30 +66,11 @@ public:
         return sqrt(sdev / (size - 1));
     }
 
-    /*
-    // Function Definition
-    double m1 (double n[], int arraySize)	{
-    double sum=0.0;
-
-    for (int i = 0; i <= arraySize; i++)	{
-    sum += n[i];
+    static string FormatDouble(double value, int decimals) {
+        stringstream output;
+        output << fixed << setprecision(decimals) << value;
+        return output.str();
     }
-    m2=sum/50;
-    return m2;
-    }	// Function for mean
-
-    double sD (double n[], int arraySize)	{
-    double sD;
-    double sum2 = 0.0;
-
-    for ( int i = 0; i <=arraySize; i++ )	{
-    sum2 += pow((n[i]-m2),2);
-    }
-    sD=sqrt(sum2/(arraySize-1));
-    return sD;
-    }	// Function for standard deviation
-    // End of Program
-    */
 
 };
 #endif

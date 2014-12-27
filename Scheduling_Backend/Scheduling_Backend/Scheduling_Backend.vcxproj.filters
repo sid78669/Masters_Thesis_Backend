@@ -53,6 +53,9 @@
     <ClCompile Include="Scheduler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="getCPUTime.c">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="sections.dat">

@@ -1,14 +1,18 @@
 
 #include "Population.h"
+#include "getCPUTime.c"
 
-int main( ) {
+int main() {
+    double startTime, endTime;
+    startTime = getCPUTime();
     Population p("new_input.dat");
     //cout << "Begin Evolution" << endl;
-    p.Evolve( );
+    p.Evolve();
     cout << endl << "End Evolution" << endl;
     cout << "*********************************************************************" << endl;
     cout << "Final Population:" << endl;
     cout << p;
     cout << endl << endl << "All Done." << endl;
-    //system("PAUSE");
+    endTime = getCPUTime();
+    fprintf(stdout, "CPU time used = %lf\n", (endTime - startTime));
 }

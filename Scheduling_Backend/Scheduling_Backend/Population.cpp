@@ -204,7 +204,7 @@ This method will read the section data file. It will then add the list of course
 */
 void Population::readSectionList(ifstream &inFile, vector<string> &courseList) {
     cout << "Starting reading sections..." << endl;
-    int course_count = 0;
+    //int course_count = 0;
     int * tempCourseSections = new int[ARRAY_MAX];
 
     //ifstream inFile(data_file_path + "/sections.dat");
@@ -518,7 +518,7 @@ void Population::readInitialSchedule(ifstream &inFile) {
             cout << individuals[0]->print( ) << endl;
     }
     individuals[0]->updateFitness(incompatibleSections, sectionPref, profPref,
-                                  timeSlots, professor_count, timeslot_count, profSection);
+                                  timeSlots,  timeslot_count, profSection);
     weakestIndividualID = 0;
     lowestFitnessSeen = individuals[0]->getFitness( );
     strongestIndividualID = 0;
@@ -582,7 +582,7 @@ void Population::initPopulationFromFirst( ) {
 
         }*/
         individuals[i]->updateFitness(incompatibleSections, sectionPref,
-                                      profPref, timeSlots, professor_count, timeslot_count,
+                                      profPref, timeSlots,  timeslot_count,
                                       profSection);
         individualValidity[i] = validateChromosome(individuals[i]);
         if (DEBUG_INIT_POPULATION) {
@@ -768,7 +768,7 @@ int Population::localOptimization(int currentGeneration) {
                           timeCredLegend, credit_count, &h, incompatibleSections,
                           REPAIR_TRIES, sectionCredit, profSection);
         sacrifice->updateFitness(incompatibleSections, sectionPref, profPref,
-                                 timeSlots, professor_count, timeslot_count, profSection);
+                                 timeSlots,  timeslot_count, profSection);
 
         //if (sacrifice->getFitness( ) > individuals[weakestIndividualID]->getFitness( )) {
         //    if (DEBUG_LO) {
@@ -891,7 +891,7 @@ void Population::Evolve( ) {
                           timeCredLegend, credit_count, &h, incompatibleSections,
                           REPAIR_TRIES, sectionCredit, profSection);
         sacrifice->updateFitness(incompatibleSections, sectionPref, profPref,
-                                 timeSlots, professor_count, timeslot_count, profSection);
+                                 timeSlots,  timeslot_count, profSection);
 
         if (sacrifice->getFitness( ) > individuals[weakestIndividualID]->getFitness( )) {
             if (DEBUG_EVOLVE) {
@@ -970,7 +970,7 @@ string Population::PrintTableFormat( ) {
         }
     } else {
         for (int i = 0; i < population_size; ++i) {
-            rtnVal += individuals[i]->printTable(timeSlots, timeslot_count, sectionCredit);
+            rtnVal += individuals[i]->printTable(timeSlots, timeslot_count);
             rtnVal += "\n\n";
         }
     }
@@ -1016,7 +1016,8 @@ ostream & operator<<(ostream & os, const Population &source) {
             os << fitnessValues[i] << ",";
         }
         os << fitnessValues[source.population_size - 1] << endl;
-    }
+    } //if (PRINT_WHOLE_POPULATION)
+
     os << "\n\nStrongest Individual: " << source.strongestIndividualID << endl;
     os
         << source.individuals[source.strongestIndividualID]->printTable(
@@ -1056,15 +1057,18 @@ ostream & operator<<(ostream & os, const Population &source) {
             strongestValid = (maxFitness*100.0 / MAX_FITNESS*1.0);
             strongestValid = (strongestValid < 0 ? strongestValid * -1.0 : strongestValid);
             os << "\n\nStrongest Valid Individual: " << maxFitID << endl;
-            os
-                << source.individuals[maxFitID]->printTable(source.timeSlots,
-                source.timeslot_count, source.sectionCredit);
+            os << source.individuals[maxFitID]->printTable(source.timeSlots,
+                source.timeslot_count);// , source.sectionCredit);
             os << "Fitnesss: " << strongestValid << "%" << endl;
             os << "Valid: " << (validFound ? "Yes" : "No") << endl;
             /*os << "Professor Credits: "
                 << source.individuals[maxFitID]->getProfessorLoads( ) << endl;*/
             os << "Professor Schedule: " << endl << source.individuals[maxFitID]->printProfTable( ) << endl;
-            os << "Improvement from Initial Schedule: " << (strongestValid*100.0 / source.initFitness) << "%" << endl;
+            improvement = (strongestValid + abs(source.initFitness)) *100.0 / abs(source.initFitness);
+
+            if (improvement < 0)
+                improvement *= -1.0;
+            os << "Improvement from Initial Schedule: " << improvement << "%" << endl;
         }
     } else {
         os << "Strongest was valid." << endl;

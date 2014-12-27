@@ -1,2 +1,2 @@
-#TargetFrameworkVersion=v4.0:PlatformToolSet=v120:EnableManagedIncrementalBuild=false:VCToolArchitecture=Native32Bit
-Debug|Win32|C:\Users\Siddharth\Dropbox\PennState\Grad\Masters_Thesis\Masters_Thesis_Backend\Scheduling_Backend\|
+#TargetFrameworkVersion=v4.0:PlatformToolSet=v140:EnableManagedIncrementalBuild=false:VCToolArchitecture=Native32Bit
+Debug|Win32|C:\Users\Siddharth\Documents\GitHub\Masters_Thesis_Backend\Scheduling_Backend\|
