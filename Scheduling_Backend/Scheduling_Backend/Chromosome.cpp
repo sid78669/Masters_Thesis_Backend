@@ -1,3 +1,31 @@
+/*
+Author: Siddharth Dahiya
+Package: Course and Professor Scheduling (Backend)
+File: Chromosome.cpp
+Contact: syd5144@gmail.com
+
+Copyright (c) 2015 Siddharth Dahiya
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+*/
+
 #include "Chromosome.h"
 
 Chromosome::Chromosome(int geneLength, int profCount, double * profCredsMax) : gene_length(geneLength), prof_count(profCount) {
@@ -162,13 +190,13 @@ string Chromosome::print(int geneID) {
         + to_string(genes[geneID]->getTimeID());
 }
 
-void Chromosome::mutate(int ** sectionProf, int section_count, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend,
+void Chromosome::mutate(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend,
     int timeCredLegendSize, Helper * h, double mutation_probability, double * sectionCredit) {
 
     if (DEBUG_MUTATION)
         cout << "Mutating Individual... " << endl;
 
-    for (int g = 0; g < section_count; g++) {
+    for (int g = 0; g < gene_length; g++) {
         int creditRow = 0, timeID = -1, compTimes = -1, profID = -1, compProfs = -1;
 
         compProfs = sectionProf[g][0];
@@ -211,7 +239,7 @@ void Chromosome::mutate(int ** sectionProf, int section_count, int ** creditTime
         cout << "Finished Mutating." << endl;
 }
 
-void Chromosome::repair(int ** sectionProf, int section_count, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend,
+void Chromosome::repair(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend,
     int timeCredLegendSize, Helper * h, int ** incompatibleSections, const int REPAIR_TRIES, double * sectionCred, int ** profSection) {
     /*
     //    Do a loop for maximum of REPAIR_TRIES. Each time keep a boolean
@@ -235,12 +263,12 @@ void Chromosome::repair(int ** sectionProf, int section_count, int ** creditTime
 
     int tries = 0;
 
-    vector<int> * tabooProf = new vector<int>[section_count];
-    vector<int> * tabooTime = new vector<int>[section_count];
+    vector<int> * tabooProf = new vector<int>[gene_length];
+    vector<int> * tabooTime = new vector<int>[gene_length];
 
     //We want to go through the Chromosome, at least once.
     do {
-        for (int secIndex = 0; secIndex < section_count; secIndex++) {
+        for (int secIndex = 0; secIndex < gene_length; secIndex++) {
             //First, ensure that the current section is not causing a professor to be overloaded.
             if (professorCredits[genes[secIndex]->getProfID()] < DELTA_MAX) {
                 //Switch to another valid professor.
@@ -415,6 +443,23 @@ void Chromosome::repair(int ** sectionProf, int section_count, int ** creditTime
 
     if (DEBUG_REPAIR)
         cout << "Gene Repaired to the best of the abilities..." << endl;
+}
+
+void Chromosome::optimize(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, int ** incompatibleSections, double * sectionCredit, int ** profSection) {
+    /*
+    Idea: 
+    1. Swap 2 faculty. 
+    2. Check fitness function. 
+    3. If fitness has improved, repeat again with 2 more faculty. 
+    4. Repeat until fitness stops improving.
+    */
+
+    int currentFitness = fitness, updatedFitness = 0;
+
+    do {
+        //Find 2 faculty to swap.
+    } while(updatedFitness > currentFitness);
+
 }
 
 void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref,

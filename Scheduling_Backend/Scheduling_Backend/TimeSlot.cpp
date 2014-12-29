@@ -1,5 +1,33 @@
-#include "TimeSlot.h"
+/*
+Author: Siddharth Dahiya
+Package: Course and Professor Scheduling (Backend)
+File: TimeSlot.cpp
+Contact: syd5144@gmail.com
 
+Copyright (c) 2015 Siddharth Dahiya
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+*/
+
+
+#include "TimeSlot.h"
 
 TimeSlot::TimeSlot(double creds) {
     credits = creds;
@@ -76,6 +104,30 @@ double TimeSlot::getCredits( ) {
     return credits;
 }
 
+bool TimeSlot::isConsecutive(TimeSlot other ) {    
+    for(int i = 0; i < 6; i++) {
+        struct tm currentDayStart, currentDayEnd, correspondingDayStart, correspondingDayEnd;
+        currentDayStart.tm_hour = days[ i ].startTime / 100;
+        currentDayEnd.tm_hour = days[ i ].endTime / 100;
+        currentDayStart.tm_min = days[ i ].startTime % 100;
+        currentDayEnd.tm_min = days[ i ].endTime % 100;
+        correspondingDayStart.tm_hour = other.days[ i ].startTime / 100;
+        correspondingDayEnd.tm_hour = other.days[ i ].endTime / 100;
+        correspondingDayStart.tm_min = other.days[ i ].startTime % 100;
+        correspondingDayEnd.tm_min = other.days[ i ].endTime % 100;
+
+        double secondsSE = difftime(mktime(&currentDayStart), mktime(&correspondingDayEnd));
+        double secondsES = difftime(mktime(&currentDayEnd), mktime(&correspondingDayStart));
+
+        //If the difference in time is less than 15 minutes, they are consecutive.
+        if(secondsSE <= 60 * 16 || secondsES <= 60*16) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool TimeSlot::isOverlap(TimeSlot other) {
     for (int i = 0; i < 6; i++) {
         if (days[i].startTime >= other.days[i].startTime && days[i].startTime < other.days[i].endTime) {
@@ -97,6 +149,10 @@ bool TimeSlot::isMorning( ) {
 
 bool TimeSlot::isAfternoon( ) {
     return afternoon;
+}
+
+bool TimeSlot::isEvening( ) {
+    return !( morning || afternoon );
 }
 
 string TimeSlot::print(bool creditPrint) {
