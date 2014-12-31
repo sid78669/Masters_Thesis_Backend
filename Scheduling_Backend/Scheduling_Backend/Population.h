@@ -37,7 +37,6 @@ THE SOFTWARE.
 #define DEBUG_INIT_CHROMOSOME 0
 #define DEBUG_INIT_POPULATION 0
 #define DEBUG_INIT_POPULATION_COMPARED 0
-#define DEBUG_VALIDATE 0
 #define DEBUG_EVOLVE 0
 #define DEBUG_LO 0
 #define DEBUG_INIT 0
@@ -63,8 +62,7 @@ public:
     //Population(string dataFilePath, int populationSize, int generationCount, int replacementWait, double mutationProbability);
     Population(string dataFilePath);
     void Evolve( );
-    string PrintTableFormat( );
-    string GetFitnessData( );
+    void PrintEnd( );
     virtual ~Population( );
     friend ostream & operator<<(ostream & os, const Population &source);
 private:
@@ -99,7 +97,6 @@ private:
     double * timeCredLegend;
     double * sectionCredit;
     double * profCreditMax;
-    bool * individualValidity;
 
     ofstream statFile;
     ofstream outputFile;
@@ -115,7 +112,11 @@ private:
     void readCoursePref(ifstream &input, vector<string>);
     void readProfPref(ifstream &input);
     void readParameters(ifstream &input);
-    bool validateChromosome(Chromosome * const toValidate) const;
+    int getWeightedRandomIndividual( );
+    string PrintTableFormat( );
+    string GetFitnessData( );
+    bool allValid( );
+    bool allValid(int currentGeneration );
 };
 
 #endif

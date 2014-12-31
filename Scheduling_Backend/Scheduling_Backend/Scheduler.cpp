@@ -37,9 +37,12 @@ int main() {
     p.Evolve();
     cout << endl << "End Evolution" << endl;
     cout << "*********************************************************************" << endl;
-    cout << "Final Population:" << endl;
-    cout << p;
-    cout << endl << endl << "All Done." << endl;
+    p.PrintEnd( );
     endTime = getCPUTime();
+    ofstream statFile;
+    statFile.open("stat.txt", ofstream::out || ofstream::app);
+    statFile << "CPU time used = " << ( endTime - startTime ) << endl;
+    statFile.close( );
     fprintf(stdout, "CPU time used = %lf\n", (endTime - startTime));
+    system("pause");
 }

@@ -31,8 +31,6 @@ THE SOFTWARE.
 #include <random>
 #include <cmath>
 
-#define SEED 11041986
-
 class Helper {
 public:
     std::mt19937 rand_gen;
@@ -40,7 +38,7 @@ public:
     unsigned long seed;
 
     Helper( ) {
-        seed = SEED;
+        seed = plant();
         rand_gen.seed(seed);
     }
 

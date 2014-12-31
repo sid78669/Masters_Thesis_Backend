@@ -34,6 +34,7 @@ THE SOFTWARE.
 #define DEBUG_MUTATION 0
 #define DELTA_MAX -2.0
 #define DELTA_MIN 2.0
+#define DEBUG_VALIDATE 0
 #define MAX_FITNESS 100000
 
 #include "Utility.h"
@@ -61,7 +62,6 @@ public:
     void setTime(int geneID, int newTime);
     void setProf(int geneID, int newProf, double courseCred);
     void setGene(int geneID, Gene);
-    //void setProfCredit(int * profCreds);
     double getCourseLoad(int profID);
     const int getTime(int geneID);
     const int getProf(int geneID);
@@ -78,21 +78,25 @@ public:
 
     void mutate(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, double mutation_probability, double * sectionCredit);
     void repair(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, int ** incompatibleSections, const int REPAIR_TRIES, double * sectionCredit, int ** profSection);
-    void updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots, int timeslot_count, int ** profSectionsTaught);
-    void optimize(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, int ** incompatibleSections, double * sectionCredit, int ** profSection);
+    void updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots, int timeslot_count, int ** profSection);
+    void optimize(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, int ** incompatibleSections, double * sectionCredit, int ** profSection, int ** sectionPref, int ** profPref, int timeslot_count); 
+    bool isValid( );
     friend bool operator==(Chromosome &ch1, Chromosome &ch2);
     
 
 private:
+    //ostream * debug;
     Gene ** genes;
     double * professorCredits;
     double * professorCreditsInitial;
     int gene_length;
     int prof_count;
     int fitness;
+    bool valid;
     void updateProfLoad(double * sectionCredit);
     bool validProfessorLoad(int profID);
     bool validProfessorLoadChange(int profID, double creditChange);
+    void validate(int ** incompatibleSections);
 };
 
 #endif
