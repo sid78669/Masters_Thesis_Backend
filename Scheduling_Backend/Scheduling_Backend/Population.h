@@ -47,7 +47,7 @@ THE SOFTWARE.
 #include "Chromosome.h"
 #include "TimeSlot.h"
 #include "Utility.cpp"
-#include "Helper.h"
+#include "Helper.cpp"
 
 #include <iostream>
 #include <fstream>

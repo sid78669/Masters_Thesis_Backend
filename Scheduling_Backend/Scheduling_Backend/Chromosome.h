@@ -39,7 +39,7 @@ THE SOFTWARE.
 
 #include "Utility.cpp"
 #include "Gene.h"
-#include "Helper.h"
+#include "Helper.cpp"
 #include "TimeSlot.h"
 #include "PeriodData.h"
 #include <iostream>
