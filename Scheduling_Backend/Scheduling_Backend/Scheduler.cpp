@@ -28,17 +28,20 @@ THE SOFTWARE.
 
 
 #include "Population.h"
-#include "getCPUTime.c"
+//#include "getCPUTime.c"
+#include "Timing.cpp"
 
-int main() {
+int main( ) {
     double startTime, endTime;
-    startTime = getCPUTime();
+    //startTime = getCPUTime( );
+    startTime = get_cpu_time( );
     Population p("new_input.dat");
-    p.Evolve();
+    p.Evolve( );
     cout << endl << "End Evolution" << endl;
     cout << "*********************************************************************" << endl;
     p.PrintEnd( );
-    endTime = getCPUTime();
+    //endTime = getCPUTime( );
+    endTime = get_cpu_time( );
     ofstream statFile;
 #ifdef _WIN32    
     char * hostnameChr = 0;
@@ -51,9 +54,9 @@ int main() {
     string hostname = getenv("COMPUTERNAME");
     hostname += "-stat.txt";
 #endif
-    statFile.open(hostname, ofstream::out || ofstream::app); 
+    statFile.open(hostname.c_str( ), ofstream::out | ofstream::app);
     statFile << "CPU time used = " << ( endTime - startTime ) << endl;
     statFile.close( );
-    fprintf(stdout, "CPU time used = %lf\n", (endTime - startTime));
+    fprintf(stdout, "CPU time used = %lf\n", ( endTime - startTime ));
     system("pause");
 }

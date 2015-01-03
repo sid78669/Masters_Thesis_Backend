@@ -36,6 +36,7 @@ THE SOFTWARE.
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <math.h>
 using namespace std;
 class Utility {
 

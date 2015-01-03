@@ -80,6 +80,7 @@
     <ClCompile Include="Population.cpp" />
     <ClCompile Include="Scheduler.cpp" />
     <ClCompile Include="TimeSlot.cpp" />
+    <ClCompile Include="Timing.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="courses.dat">

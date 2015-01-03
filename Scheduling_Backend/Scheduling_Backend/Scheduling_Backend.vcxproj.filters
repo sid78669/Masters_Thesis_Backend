@@ -34,7 +34,7 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Helper.cpp">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -55,6 +55,9 @@
     </ClCompile>
     <ClCompile Include="getCPUTime.c">
       <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Timing.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
