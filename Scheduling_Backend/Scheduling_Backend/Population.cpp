@@ -43,21 +43,18 @@ REPAIR_TRIES(100) {
     professor_count = 0;
     credit_count = 0;
     timeslot_count = 0;
-#ifdef _WIN32    
-    char * hostnameChr = 0;
-    size_t sz = 0;
-    _dupenv_s(&hostnameChr, &sz, "COMPUTERNAME");
-    string hostname(hostnameChr);
-    delete[ ] hostnameChr;
-#elif __linux
-    string hostname = getenv("COMPUTERNAME");
-#endif
-    statFile.open(hostname + "-stat.txt", ofstream::out);
-    cout << "Stat file: " << hostname << "-stat.txt" << endl;
-    debug.open(hostname + "-debug.txt", ofstream::out);
-    cout << "Debug file: " << hostname << "-debug.txt" << endl;
-    outputFile.open(hostname + "-output.txt", ofstream::out);
-    cout << "Output file: " << hostname << "-output.txt" << endl;
+    suffix_cntr = 0;
+   
+    while(std::ifstream("stat" + to_string(suffix_cntr) + ".txt")) {
+        suffix_cntr++;
+    }
+
+    statFile.open("stat" + to_string(suffix_cntr) + ".txt", ofstream::out);
+    cout << "Stat file: " << "stat" + to_string(suffix_cntr) + ".txt" << endl;
+    debug.open("debug" + to_string(suffix_cntr) + ".txt", ofstream::out);
+    cout << "Debug file: " << "debug" + to_string(suffix_cntr) + ".txt" << endl;
+    outputFile.open("output" + to_string(suffix_cntr) + ".txt", ofstream::out);
+    cout << "Output file: " << "output" + to_string(suffix_cntr) + ".txt" << endl;
     //Setup the Individuals array
     readDatFiles( );
 
@@ -131,6 +128,8 @@ Population::~Population( ) {
     delete[ ] profSection;
 
     delete[ ] profCreditMax;
+
+    delete[ ] timeCredLegend;
 } //end destructor
 
 void Population::readDatFiles( ) {

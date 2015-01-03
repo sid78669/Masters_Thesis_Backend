@@ -66,6 +66,7 @@ public:
     void PrintEnd( );
     virtual ~Population( );
     friend ostream & operator<<(ostream & os, const Population &source);
+    int suffix_cntr;
 private:
     string data_file_path;
     double mutation_probability; 
