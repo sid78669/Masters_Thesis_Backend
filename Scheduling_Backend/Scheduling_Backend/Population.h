@@ -69,7 +69,8 @@ public:
 private:
     string data_file_path;
     double mutation_probability; 
-    double initFitness;
+    //double initFitness;
+    double initPenalty;
     int population_size;
     int generation_count;
     int replacement_wait;
@@ -80,8 +81,10 @@ private:
     int credit_count;
     int weakestIndividualID;
     int strongestIndividualID;
-    int lowestFitnessSeen;
-    int highestFitnessSeen;
+    //int lowestFitnessSeen;
+    int highestPenaltySeen;
+    //int highestFitnessSeen;
+    int lowestPenaltySeen;
     const int REPAIR_TRIES;
 
     Helper h;
@@ -116,7 +119,8 @@ private:
     void prepareDataStatistics( );
     int getWeightedRandomIndividual( );
     string PrintTableFormat( );
-    string GetFitnessData( );
+    //string GetFitnessData( );
+    string GetPenaltyData( );
     bool allValid( );
     bool allValid(int currentGeneration );
 };

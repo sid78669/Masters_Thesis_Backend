@@ -218,7 +218,8 @@ void Population::readDatFiles( ) {
 
     statFile << "Mean, SD;" << endl;
 
-    statFile << "0," << GetFitnessData( );
+    //statFile << "0," << GetFitnessData( );
+    statFile << "0," << GetPenaltyData( );
 } //end readDatFiles()
 
 void Population::prepareDataStatistics( ) {
@@ -234,7 +235,7 @@ void Population::prepareDataStatistics( ) {
             max = incompatibleSections[ index ][ 0 ];
         }
     }
-    mean = (double)total / (double)section_count;
+    mean = ( double ) total / ( double ) section_count;
     statFile << "Incompatible Sections: " << endl;
     statFile << "Range: [" << min << "," << max << "]" << endl;
     statFile << "Mean: " << fixed << setprecision(2) << mean << endl << endl;
@@ -284,10 +285,10 @@ void Population::prepareDataStatistics( ) {
     mean = 0.0;
     for(int index = 0; index < section_count; ++index) {
         int timeIndex = 0;
-                
+
         while(timeCredLegend[ timeIndex ] != sectionCredit[ index ])
-            timeIndex++;        
-        
+            timeIndex++;
+
         total += creditTimeSlot[ timeIndex ][ 0 ];
         if(min > creditTimeSlot[ timeIndex ][ 0 ]) {
             min = creditTimeSlot[ timeIndex ][ 0 ];
@@ -621,16 +622,21 @@ void Population::readInitialSchedule(ifstream &inFile) {
         }
         debug << individuals[ 0 ]->print( ) << endl;
     }
-    individuals[ 0 ]->updateFitness(incompatibleSections, sectionPref, profPref,
-                                    timeSlots, timeslot_count, profSection);
+    //individuals[ 0 ]->updateFitness(incompatibleSections, sectionPref, profPref, timeSlots, timeslot_count, profSection);
+    individuals[ 0 ]->updatePenalty(incompatibleSections, sectionPref, profPref, timeSlots, timeslot_count, profSection);
+
     weakestIndividualID = 0;
-    lowestFitnessSeen = individuals[ 0 ]->getFitness( );
+    //lowestFitnessSeen = individuals[ 0 ]->getFitness( );
+    highestPenaltySeen = individuals[ 0 ]->getPenalty( );
     strongestIndividualID = 0;
-    highestFitnessSeen = individuals[ 0 ]->getFitness( );
+    //highestFitnessSeen = individuals[ 0 ]->getFitness( );
+    lowestPenaltySeen = individuals[ 0 ]->getPenalty( );
 
     statFile << "Prof Rating: " << endl << individuals[ 0 ]->getProfessorLoads( ) << endl;
-    initFitness = ( individuals[ 0 ]->getFitness( ) *100.0 / MAX_FITNESS*1.0 );
-    statFile << "Initial Schedule Fitness: " << initFitness << "%" << endl;
+    //initFitness = ( individuals[ 0 ]->getFitness( ) *100.0 / MAX_FITNESS*1.0 );
+    initPenalty = ( individuals[ 0 ]->getPenalty( ) );
+    //statFile << "Initial Schedule Fitness: " << initFitness << "%" << endl;
+    statFile << "Initial Schedule Penalty: " << initPenalty << endl;
     cout << "First Chromosome Initialized." << endl;
 }
 
@@ -657,21 +663,29 @@ void Population::initPopulationFromFirst( ) {
 
         debug << "Post-Repair: " << endl << individuals[ i ]->print( ) << endl;
 
-        individuals[ i ]->updateFitness(incompatibleSections, sectionPref,
-                                        profPref, timeSlots, timeslot_count,
-                                        profSection);
+        //individuals[ i ]->updateFitness(incompatibleSections, sectionPref,profPref, timeSlots, timeslot_count,profSection);
+        individuals[ i ]->updatePenalty(incompatibleSections, sectionPref, profPref, timeSlots, timeslot_count, profSection);
 
         debug << i << " valid: " << individuals[ i ]->isValid( ) << endl;
-        debug << "Fitness for " << i << " is " << individuals[ i ]->getFitness( ) << endl << endl;
+        //debug << "Fitness for " << i << " is " << individuals[ i ]->getFitness( ) << endl << endl;
+        debug << "Penalty for " << i << " is " << individuals[ i ]->getPenalty( ) << endl << endl;
 
-        if(individuals[ i ]->getFitness( ) < individuals[ weakestIndividualID ]->getFitness( )) {
+        //if(individuals[ i ]->getFitness( ) < individuals[ weakestIndividualID ]->getFitness( )) {
+        //    weakestIndividualID = i;
+        //    lowestFitnessSeen = individuals[ i ]->getFitness( );
+        //}
+        if(individuals[ i ]->getPenalty( ) > individuals[ weakestIndividualID ]->getPenalty( )) {
             weakestIndividualID = i;
-            lowestFitnessSeen = individuals[ i ]->getFitness( );
+            highestPenaltySeen = individuals[ i ]->getPenalty( );
         }
 
-        if(individuals[ i ]->getFitness( ) > individuals[ strongestIndividualID ]->getFitness( )) {
+        //if(individuals[ i ]->getFitness( ) > individuals[ strongestIndividualID ]->getFitness( )) {
+        //    strongestIndividualID = i;
+        //    highestFitnessSeen = individuals[ i ]->getFitness( );
+        //}
+        if(individuals[ i ]->getPenalty( ) < individuals[ strongestIndividualID ]->getPenalty( )) {
             strongestIndividualID = i;
-            highestFitnessSeen = individuals[ i ]->getFitness( );
+            lowestPenaltySeen = individuals[ i ]->getPenalty( );
         }
     }
     mutation_probability = original_mutation_probability;
@@ -755,7 +769,8 @@ int Population::getWeightedRandomIndividual( ) {
     int minWeight = 0;
     int maxWeight = 0;
     for(int i = 0; i < population_size; i++) {
-        maxWeight += abs(individuals[ i ]->getFitness( ));
+        //maxWeight += abs(individuals[ i ]->getFitness( ));
+        maxWeight += individuals[ i ]->getPenalty( );
         if(maxWeight > (int)pow(2, 30))
         {
             maxWeight = -1;
@@ -767,7 +782,8 @@ int Population::getWeightedRandomIndividual( ) {
         int randomWeight = h.randNum(minWeight, maxWeight);
         int sacrifice = 0;
         for(sacrifice = 0; sacrifice < population_size; ++sacrifice) {
-            maxWeight -= abs(individuals[ sacrifice ]->getFitness( ));
+            //maxWeight -= abs(individuals[ sacrifice ]->getFitness( ));
+            maxWeight -= individuals[ sacrifice ]->getPenalty( );
             if(maxWeight <= 0)
                 break;
         }
@@ -835,10 +851,16 @@ void Population::Evolve( ) {
 
         int sacrificeID = getWeightedRandomIndividual( );
 
-        if(individuals[ sacrificeID ]->getFitness( ) < lowestFitnessSeen)
-            lowestFitnessSeen = individuals[ sacrificeID ]->getFitness( );
-        if(individuals[ sacrificeID ]->getFitness( ) > highestFitnessSeen)
-            highestFitnessSeen = individuals[ sacrificeID ]->getFitness( );
+        //if(individuals[ sacrificeID ]->getFitness( ) < lowestFitnessSeen)
+        //    lowestFitnessSeen = individuals[ sacrificeID ]->getFitness( );
+        //if(individuals[ sacrificeID ]->getFitness( ) > highestFitnessSeen)
+        //    highestFitnessSeen = individuals[ sacrificeID ]->getFitness( );
+
+        if(individuals[ sacrificeID ]->getPenalty( ) < lowestPenaltySeen)
+            lowestPenaltySeen = individuals[ sacrificeID ]->getPenalty( );
+        if(individuals[ sacrificeID ]->getPenalty( ) > highestPenaltySeen)
+            highestPenaltySeen = individuals[ sacrificeID ]->getPenalty( );
+
         Chromosome * sacrifice = new Chromosome(individuals[ sacrificeID ]);
 
 
@@ -852,14 +874,16 @@ void Population::Evolve( ) {
                           sectionCredit);
         sacrifice->repair(sectionProf, creditTimeSlot, timeSlots, timeCredLegend, credit_count, &h, incompatibleSections,
                           REPAIR_TRIES, sectionCredit, profSection);
-        sacrifice->updateFitness(incompatibleSections, sectionPref, profPref, timeSlots, timeslot_count, profSection);
+        //sacrifice->updateFitness(incompatibleSections, sectionPref, profPref, timeSlots, timeslot_count, profSection);
+        sacrifice->updatePenalty(incompatibleSections, sectionPref, profPref, timeSlots, timeslot_count, profSection);
 
         if(currentGeneration > threshold_generation && !sacrifice->isValid( )) {
             currentGeneration--;
             delete sacrifice;
             continue;
         }
-        if(sacrifice->getFitness( ) > individuals[ weakestIndividualID ]->getFitness( )) {
+        //if(sacrifice->getFitness( ) > individuals[ weakestIndividualID ]->getFitness( )) {
+        if(sacrifice->getPenalty( ) < individuals[ weakestIndividualID ]->getPenalty( )) {
             //Only optimize if the sacrifice is valid.
             if(sacrifice->isValid( )) {
                 sacrifice->optimize(sectionProf, creditTimeSlot, timeSlots, timeCredLegend, credit_count, &h, incompatibleSections,
@@ -900,13 +924,14 @@ void Population::Evolve( ) {
             //If we are past the threshold generation, we want to start creating a valid population.
             if(currentGeneration > threshold_generation && !valid_population) {
                 int weakestInvalid = -1;
-                int lowestFitness = lowestFitnessSeen;
+                //int lowestFitness = lowestFitnessSeen;
+                int highestPenalty = highestPenaltySeen;
                 for(int j = 0; j < population_size; ++j) {
-                    if(!individuals[ j ]->isValid( ) && individuals[ j ]->getFitness( ) < lowestFitness) {
+                    if(!individuals[ j ]->isValid( ) && individuals[ j ]->getPenalty( ) > highestPenaltySeen) {
                         weakestInvalid = j;
-                        lowestFitness = individuals[ j ]->getFitness( );
+                        highestPenalty = individuals[ j ]->getPenalty( );
                     }
-                    if(individuals[ j ]->getFitness( ) > individuals[ strongestIndividualID ]->getFitness( )) {
+                    if(individuals[ j ]->getPenalty( ) < individuals[ strongestIndividualID ]->getPenalty( )) {
                         strongestIndividualID = j;
                     }
                 }
@@ -918,10 +943,10 @@ void Population::Evolve( ) {
             else {
             alternateWeakestSelection:
                 for(int j = 0; j < population_size; ++j) {
-                    if(individuals[ j ]->getFitness( ) < individuals[ weakestIndividualID ]->getFitness( )) {
+                    if(individuals[ j ]->getPenalty( ) > individuals[ weakestIndividualID ]->getPenalty( )) {
                         weakestIndividualID = j;
                     }
-                    if(individuals[ j ]->getFitness( ) > individuals[ strongestIndividualID ]->getFitness( )) {
+                    if(individuals[ j ]->getPenalty( ) < individuals[ strongestIndividualID ]->getPenalty( )) {
                         strongestIndividualID = j;
                     }
                 }
@@ -942,12 +967,14 @@ void Population::Evolve( ) {
 
         if(currentGeneration > 0) {// && ( ( i % 100 == 0 ) || i == 1 )) {
             statFile << currentGeneration << ",";
-            statFile << GetFitnessData( );
+            //statFile << GetFitnessData( );
+            statFile << GetPenaltyData( );
         }
     }
     cout << endl << "Evolution Complete." << endl;
     statFile << currentGeneration << ",";
-    statFile << GetFitnessData( ) << endl;
+    //statFile << GetFitnessData( ) << endl;
+    statFile << GetPenaltyData( ) << endl;
     statFile << "Population valid at: " << generationOfFullValidity << endl;
 }
 
@@ -970,15 +997,29 @@ string Population::PrintTableFormat( ) {
     return rtnVal;
 }
 
-string Population::GetFitnessData( ) {
-    int * allFitness = new int[ population_size - 2 ];
+//string Population::GetFitnessData( ) {
+//    int * allFitness = new int[ population_size - 2 ];
+//    stringstream s;
+//    for(int i = 0; i < population_size; ++i) {
+//        allFitness[ i - 1 ] = individuals[ i ]->getFitness( );
+//        s << individuals[ i ]->getFitness( ) << ",";
+//    }
+//    double mean = Utility::CalculateMean(allFitness, population_size - 1);
+//    double sd = Utility::StandardDeviation(allFitness, population_size - 1, mean);
+//    s << mean << "," << sd;
+//    s << ";\n";
+//    return s.str( );
+//}
+
+string Population::GetPenaltyData( ) {
+    int * allPenalty = new int[ population_size - 2 ];
     stringstream s;
     for(int i = 0; i < population_size; ++i) {
-        allFitness[ i - 1 ] = individuals[ i ]->getFitness( );
-        s << individuals[ i ]->getFitness( ) << ",";
+        allPenalty[ i - 1 ] = individuals[ i ]->getPenalty( );
+        s << individuals[ i ]->getPenalty( ) << ",";
     }
-    double mean = Utility::CalculateMean(allFitness, population_size - 1);
-    double sd = Utility::StandardDeviation(allFitness, population_size - 1, mean);
+    double mean = Utility::CalculateMean(allPenalty, population_size - 1);
+    double sd = Utility::StandardDeviation(allPenalty, population_size - 1, mean);
     s << mean << "," << sd;
     s << ";\n";
     return s.str( );
@@ -986,39 +1027,37 @@ string Population::GetFitnessData( ) {
 
 void Population::PrintEnd( ) {
     outputFile << "Final Population:" << endl;
-    double strongestFitness = ( individuals[ strongestIndividualID ]->getFitness( )*100.0 / MAX_FITNESS*1.0 );
-    strongestFitness = ( strongestFitness < 0 ? strongestFitness * -1.0 : strongestFitness );
+    //double strongestFitness = ( individuals[ strongestIndividualID ]->getFitness( )*100.0 / MAX_FITNESS*1.0 );
+    double lowestPenalty = individuals[ strongestIndividualID ]->getPenalty( );
+    //strongestFitness = ( strongestFitness < 0 ? strongestFitness * -1.0 : strongestFitness );
     if(PRINT_WHOLE_POPULATION) {
         outputFile << "Printing Current Population..." << endl;
-        int* fitnessValues = new int[ population_size ];
+        int* penaltyValues = new int[ population_size ];
         for(int i = 0; i < population_size; ++i) {
             outputFile << "Individual " << i << endl;
             outputFile
                 << individuals[ i ]->printTable(timeSlots,
                 timeslot_count, sectionCredit);
-            fitnessValues[ i ] = individuals[ i ]->getFitness( );
-            outputFile << "Fitnesss: " << fitnessValues[ i ] << endl;
+            penaltyValues[ i ] = individuals[ i ]->getPenalty( );
+            outputFile << "Penatly: " << penaltyValues[ i ] << endl;
             outputFile << "Valid: "
                 << ( individuals[ i ]->isValid( ) ?
                 "Yes" : "No" ) << endl;
             outputFile << "*******************************************************"
                 << endl << endl;
         }
-        outputFile << "Current fitness values: " << endl;
+        outputFile << "Current penalty values: " << endl;
         for(int i = 0; i < population_size - 1; ++i) {
-            outputFile << fitnessValues[ i ] << ",";
+            outputFile << penaltyValues[ i ] << ",";
         }
-        outputFile << fitnessValues[ population_size - 1 ] << endl;
+        outputFile << penaltyValues[ population_size - 1 ] << endl;
     } //if (PRINT_WHOLE_POPULATION)
 
     outputFile << "\n\nStrongest Individual: " << strongestIndividualID << endl;
-    outputFile
-        << individuals[ strongestIndividualID ]->printTable(
-        timeSlots, timeslot_count);
-    outputFile << "Fitness: "
-        << strongestFitness << "%"
-        << endl;
-    double improvement = ( strongestFitness + abs(initFitness) ) *100.0 / abs(initFitness);
+    outputFile << individuals[ strongestIndividualID ]->printTable(timeSlots, timeslot_count);
+    //outputFile << "Fitness: " << strongestFitness << "%" << endl;
+    outputFile << "Penalty: " << lowestPenalty << endl;
+    double improvement = ( lowestPenalty + initPenalty ) *100.0 / initPenalty;
 
     if(improvement < 0)
         improvement *= -1.0;
@@ -1027,42 +1066,42 @@ void Population::PrintEnd( ) {
 
     outputFile << "Professor Schedule: " << endl << individuals[ strongestIndividualID ]->printProfTable( ) << endl;
 
-    if(!individuals[ strongestIndividualID ]->isValid( )) {
-        double strongestValid = 0.0;
-        int maxFitness = 0, maxFitID = 0;
-        bool validFound = false;
-        for(int i = 0; i < population_size; ++i) {
-            if(individuals[ i ]->isValid( ) && individuals[ i ]->getFitness( ) > maxFitness) {
-                validFound = true;
-                maxFitID = i;
-                maxFitness = individuals[ i ]->getFitness( );
-            }
-        }
-        if(maxFitness == 0) {
-            maxFitness = individuals[ maxFitID ]->getFitness( );
-        }
-        if(maxFitness < individuals[ strongestIndividualID ]->getFitness( )) {
-            outputFile << "\n\n Strongest individual is the that was found.\n" << endl;
-        }
-        else {
-            strongestValid = ( maxFitness*100.0 / MAX_FITNESS*1.0 );
-            strongestValid = ( strongestValid < 0 ? strongestValid * -1.0 : strongestValid );
-            outputFile << "\n\nStrongest Valid Individual: " << maxFitID << endl;
-            outputFile << individuals[ maxFitID ]->printTable(timeSlots,
-                                                              timeslot_count);
-            outputFile << "Fitnesss: " << strongestValid << "%" << endl;
-            outputFile << "Valid: " << ( validFound ? "Yes" : "No" ) << endl;
-            outputFile << "Professor Schedule: " << endl << individuals[ maxFitID ]->printProfTable( ) << endl;
-            improvement = ( strongestValid + abs(initFitness) ) *100.0 / abs(initFitness);
+    //if(!individuals[ strongestIndividualID ]->isValid( )) {
+    //    double strongestValid = 0.0;
+    //    int maxFitness = 0, maxFitID = 0;
+    //    bool validFound = false;
+    //    for(int i = 0; i < population_size; ++i) {
+    //        if(individuals[ i ]->isValid( ) && individuals[ i ]->getFitness( ) > maxFitness) {
+    //            validFound = true;
+    //            maxFitID = i;
+    //            maxFitness = individuals[ i ]->getFitness( );
+    //        }
+    //    }
+    //    if(maxFitness == 0) {
+    //        maxFitness = individuals[ maxFitID ]->getFitness( );
+    //    }
+    //    if(maxFitness < individuals[ strongestIndividualID ]->getFitness( )) {
+    //        outputFile << "\n\n Strongest individual is the that was found.\n" << endl;
+    //    }
+    //    else {
+    //        strongestValid = ( maxFitness*100.0 / MAX_FITNESS*1.0 );
+    //        strongestValid = ( strongestValid < 0 ? strongestValid * -1.0 : strongestValid );
+    //        outputFile << "\n\nStrongest Valid Individual: " << maxFitID << endl;
+    //        outputFile << individuals[ maxFitID ]->printTable(timeSlots,
+    //                                                          timeslot_count);
+    //        outputFile << "Fitnesss: " << strongestValid << "%" << endl;
+    //        outputFile << "Valid: " << ( validFound ? "Yes" : "No" ) << endl;
+    //        outputFile << "Professor Schedule: " << endl << individuals[ maxFitID ]->printProfTable( ) << endl;
+    //        improvement = ( strongestValid + abs(initFitness) ) *100.0 / abs(initFitness);
 
-            if(improvement < 0)
-                improvement *= -1.0;
-            outputFile << "Improvement from Initial Schedule: " << improvement << "%" << endl;
-        }
-    }
-    else {
-        outputFile << "Strongest was valid." << endl;
-    }
+    //        if(improvement < 0)
+    //            improvement *= -1.0;
+    //        outputFile << "Improvement from Initial Schedule: " << improvement << "%" << endl;
+    //    }
+    //}
+    //else {
+    //    outputFile << "Strongest was valid." << endl;
+    //}
 
     outputFile << "Done." << endl;
     statFile.close( );
@@ -1070,39 +1109,36 @@ void Population::PrintEnd( ) {
 }
 
 ostream & operator<<( ostream & os, const Population &source ) {
-    double strongestFitness = ( source.individuals[ source.strongestIndividualID ]->getFitness( )*100.0 / MAX_FITNESS*1.0 );
-    strongestFitness = ( strongestFitness < 0 ? strongestFitness * -1.0 : strongestFitness );
+    //double strongestFitness = ( source.individuals[ source.strongestIndividualID ]->getFitness( )*100.0 / MAX_FITNESS*1.0 );
+    double lowestPenalty = source.individuals[ source.strongestIndividualID ]->getPenalty( );
+    //strongestFitness = ( strongestFitness < 0 ? strongestFitness * -1.0 : strongestFitness );
     if(PRINT_WHOLE_POPULATION) {
         os << "Printing Current Population..." << endl;
-        int* fitnessValues = new int[ source.population_size ];
+        int* penaltyValues = new int[ source.population_size ];
         for(int i = 0; i < source.population_size; ++i) {
             os << "Individual " << i << endl;
-            os
-                << source.individuals[ i ]->printTable(source.timeSlots,
-                source.timeslot_count, source.sectionCredit);
-            fitnessValues[ i ] = source.individuals[ i ]->getFitness( );
-            os << "Fitnesss: " << fitnessValues[ i ] << endl;
+            os << source.individuals[ i ]->printTable(source.timeSlots,
+                                                      source.timeslot_count, source.sectionCredit);
+            penaltyValues[ i ] = source.individuals[ i ]->getPenalty( );
+            os << "Penalty: " << penaltyValues[ i ] << endl;
             os << "Valid: "
                 << ( source.individuals[ i ]->isValid( ) ?
                 "Yes" : "No" ) << endl;
             os << "*******************************************************"
                 << endl << endl;
         }
-        os << "Current fitness values: " << endl;
+        os << "Current penalty values: " << endl;
         for(int i = 0; i < source.population_size - 1; ++i) {
-            os << fitnessValues[ i ] << ",";
+            os << penaltyValues[ i ] << ",";
         }
-        os << fitnessValues[ source.population_size - 1 ] << endl;
+        os << penaltyValues[ source.population_size - 1 ] << endl;
     } //if (PRINT_WHOLE_POPULATION)
 
     os << "\n\nStrongest Individual: " << source.strongestIndividualID << endl;
-    os
-        << source.individuals[ source.strongestIndividualID ]->printTable(
-        source.timeSlots, source.timeslot_count);
-    os << "Fitness: "
-        << strongestFitness << "%"
-        << endl;
-    double improvement = ( strongestFitness + abs(source.initFitness) ) *100.0 / abs(source.initFitness);
+    os << source.individuals[ source.strongestIndividualID ]->printTable(source.timeSlots, source.timeslot_count);
+    //os << "Fitness: "<< strongestFitness << "%"<< endl;
+    os << "Penalty: " << lowestPenalty << endl;
+    double improvement = ( lowestPenalty + source.initPenalty ) *100.0 / source.initPenalty;
 
     if(improvement < 0)
         improvement *= -1.0;
@@ -1111,43 +1147,127 @@ ostream & operator<<( ostream & os, const Population &source ) {
 
     os << "Professor Schedule: " << endl << source.individuals[ source.strongestIndividualID ]->printProfTable( ) << endl;
 
-    if(!source.individuals[ source.strongestIndividualID ]->isValid( )) {
-        double strongestValid = 0.0;
-        int maxFitness = 0, maxFitID = 0;
-        bool validFound = false;
-        for(int i = 0; i < source.population_size; ++i) {
-            if(source.individuals[ i ]->isValid( ) && source.individuals[ i ]->getFitness( ) > maxFitness) {
-                validFound = true;
-                maxFitID = i;
-                maxFitness = source.individuals[ i ]->getFitness( );
-            }
-        }
-        if(maxFitness == 0) {
-            maxFitness = source.individuals[ maxFitID ]->getFitness( );
-        }
-        if(maxFitness < source.individuals[ source.strongestIndividualID ]->getFitness( )) {
-            os << "\n\n Strongest individual is the that was found.\n" << endl;
-        }
-        else {
-            strongestValid = ( maxFitness*100.0 / MAX_FITNESS*1.0 );
-            strongestValid = ( strongestValid < 0 ? strongestValid * -1.0 : strongestValid );
-            os << "\n\nStrongest Valid Individual: " << maxFitID << endl;
-            os << source.individuals[ maxFitID ]->printTable(source.timeSlots,
-                                                             source.timeslot_count);
-            os << "Fitnesss: " << strongestValid << "%" << endl;
-            os << "Valid: " << ( validFound ? "Yes" : "No" ) << endl;
-            os << "Professor Schedule: " << endl << source.individuals[ maxFitID ]->printProfTable( ) << endl;
-            improvement = ( strongestValid + abs(source.initFitness) ) *100.0 / abs(source.initFitness);
+    //if(!source.individuals[ source.strongestIndividualID ]->isValid( )) {
+    //    double strongestValid = 0.0;
+    //    int maxFitness = 0, maxFitID = 0;
+    //    bool validFound = false;
+    //    for(int i = 0; i < source.population_size; ++i) {
+    //        if(source.individuals[ i ]->isValid( ) && source.individuals[ i ]->getFitness( ) > maxFitness) {
+    //            validFound = true;
+    //            maxFitID = i;
+    //            maxFitness = source.individuals[ i ]->getFitness( );
+    //        }
+    //    }
+    //    if(maxFitness == 0) {
+    //        maxFitness = source.individuals[ maxFitID ]->getFitness( );
+    //    }
+    //    if(maxFitness < source.individuals[ source.strongestIndividualID ]->getFitness( )) {
+    //        os << "\n\n Strongest individual is the that was found.\n" << endl;
+    //    }
+    //    else {
+    //        strongestValid = ( maxFitness*100.0 / MAX_FITNESS*1.0 );
+    //        strongestValid = ( strongestValid < 0 ? strongestValid * -1.0 : strongestValid );
+    //        os << "\n\nStrongest Valid Individual: " << maxFitID << endl;
+    //        os << source.individuals[ maxFitID ]->printTable(source.timeSlots,
+    //                                                         source.timeslot_count);
+    //        os << "Fitnesss: " << strongestValid << "%" << endl;
+    //        os << "Valid: " << ( validFound ? "Yes" : "No" ) << endl;
+    //        os << "Professor Schedule: " << endl << source.individuals[ maxFitID ]->printProfTable( ) << endl;
+    //        improvement = ( strongestValid + abs(source.initFitness) ) *100.0 / abs(source.initFitness);
 
-            if(improvement < 0)
-                improvement *= -1.0;
-            os << "Improvement from Initial Schedule: " << improvement << "%" << endl;
-        }
-    }
-    else {
-        os << "Strongest was valid." << endl;
-    }
+    //        if(improvement < 0)
+    //            improvement *= -1.0;
+    //        os << "Improvement from Initial Schedule: " << improvement << "%" << endl;
+    //    }
+    //}
+    //else {
+    //    os << "Strongest was valid." << endl;
+    //}
 
     os << "Done." << endl;
     return os;
 }
+
+
+//ostream & operator<<( ostream & os, const Population &source ) {
+//    double strongestFitness = ( source.individuals[ source.strongestIndividualID ]->getFitness( )*100.0 / MAX_FITNESS*1.0 );
+//    strongestFitness = ( strongestFitness < 0 ? strongestFitness * -1.0 : strongestFitness );
+//    if(PRINT_WHOLE_POPULATION) {
+//        os << "Printing Current Population..." << endl;
+//        int* penaltyValues = new int[ source.population_size ];
+//        for(int i = 0; i < source.population_size; ++i) {
+//            os << "Individual " << i << endl;
+//            os
+//                << source.individuals[ i ]->printTable(source.timeSlots,
+//                source.timeslot_count, source.sectionCredit);
+//            penaltyValues[ i ] = source.individuals[ i ]->getFitness( );
+//            os << "Fitnesss: " << penaltyValues[ i ] << endl;
+//            os << "Valid: "
+//                << ( source.individuals[ i ]->isValid( ) ?
+//                "Yes" : "No" ) << endl;
+//            os << "*******************************************************"
+//                << endl << endl;
+//        }
+//        os << "Current fitness values: " << endl;
+//        for(int i = 0; i < source.population_size - 1; ++i) {
+//            os << penaltyValues[ i ] << ",";
+//        }
+//        os << penaltyValues[ source.population_size - 1 ] << endl;
+//    } //if (PRINT_WHOLE_POPULATION)
+//
+//    os << "\n\nStrongest Individual: " << source.strongestIndividualID << endl;
+//    os
+//        << source.individuals[ source.strongestIndividualID ]->printTable(
+//        source.timeSlots, source.timeslot_count);
+//    os << "Fitness: "
+//        << strongestFitness << "%"
+//        << endl;
+//    double improvement = ( strongestFitness + abs(source.initFitness) ) *100.0 / abs(source.initFitness);
+//
+//    if(improvement < 0)
+//        improvement *= -1.0;
+//    os << "Improvement from Initial Schedule: " << improvement << "%" << endl;
+//    os << "Valid: " << ( source.individuals[ source.strongestIndividualID ]->isValid( ) ? "Yes" : "No" ) << endl;
+//
+//    os << "Professor Schedule: " << endl << source.individuals[ source.strongestIndividualID ]->printProfTable( ) << endl;
+//
+//    if(!source.individuals[ source.strongestIndividualID ]->isValid( )) {
+//        double strongestValid = 0.0;
+//        int maxFitness = 0, maxFitID = 0;
+//        bool validFound = false;
+//        for(int i = 0; i < source.population_size; ++i) {
+//            if(source.individuals[ i ]->isValid( ) && source.individuals[ i ]->getFitness( ) > maxFitness) {
+//                validFound = true;
+//                maxFitID = i;
+//                maxFitness = source.individuals[ i ]->getFitness( );
+//            }
+//        }
+//        if(maxFitness == 0) {
+//            maxFitness = source.individuals[ maxFitID ]->getFitness( );
+//        }
+//        if(maxFitness < source.individuals[ source.strongestIndividualID ]->getFitness( )) {
+//            os << "\n\n Strongest individual is the that was found.\n" << endl;
+//        }
+//        else {
+//            strongestValid = ( maxFitness*100.0 / MAX_FITNESS*1.0 );
+//            strongestValid = ( strongestValid < 0 ? strongestValid * -1.0 : strongestValid );
+//            os << "\n\nStrongest Valid Individual: " << maxFitID << endl;
+//            os << source.individuals[ maxFitID ]->printTable(source.timeSlots,
+//                                                             source.timeslot_count);
+//            os << "Fitnesss: " << strongestValid << "%" << endl;
+//            os << "Valid: " << ( validFound ? "Yes" : "No" ) << endl;
+//            os << "Professor Schedule: " << endl << source.individuals[ maxFitID ]->printProfTable( ) << endl;
+//            improvement = ( strongestValid + abs(source.initFitness) ) *100.0 / abs(source.initFitness);
+//
+//            if(improvement < 0)
+//                improvement *= -1.0;
+//            os << "Improvement from Initial Schedule: " << improvement << "%" << endl;
+//        }
+//    }
+//    else {
+//        os << "Strongest was valid." << endl;
+//    }
+//
+//    os << "Done." << endl;
+//    return os;
+//}

@@ -67,7 +67,8 @@ public:
     const int getProf(int geneID);
     Gene* getGene(int geneID);
 
-    int getFitness( );
+    //int getFitness( );
+    int getPenalty( );
 
     string print( );
     string getProfessorLoads( );
@@ -78,7 +79,8 @@ public:
 
     void mutate(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, double mutation_probability, double * sectionCredit);
     void repair(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, int ** incompatibleSections, const int REPAIR_TRIES, double * sectionCredit, int ** profSection);
-    void updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots, int timeslot_count, int ** profSection);
+    //void updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots, int timeslot_count, int ** profSection);
+    void updatePenalty(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots, int timeslot_count, int ** profSection);
     void optimize(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, int ** incompatibleSections, double * sectionCredit, int ** profSection, int ** sectionPref, int ** profPref, int timeslot_count); 
     bool isValid( );
     friend bool operator==(Chromosome &ch1, Chromosome &ch2);
@@ -86,12 +88,18 @@ public:
 
 private:
     //ostream * debug;
+    const int PENALTY_INCOMPATIBLE_PROF_TIME_PENALTY = 15;
+    const int PENALTY_UNBALANCED_PROFESSOR = 15;
+    const int PENATLY_TIME_CONFLICT = 15;
+    const int PENATLY_TIME_PROFESSOR_PREFERENCE = 5;
+    const int PENATLY_TIME_SECTION_PREFERENCE = 5;
     Gene ** genes;
     double * professorCredits;
     double * professorCreditsInitial;
     int gene_length;
     int prof_count;
-    int fitness;
+    //int fitness;
+    int penalty;
     bool valid;
     void updateProfLoad(double * sectionCredit);
     bool validProfessorLoad(int profID);
