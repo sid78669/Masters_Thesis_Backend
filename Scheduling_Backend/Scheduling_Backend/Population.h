@@ -53,6 +53,7 @@ THE SOFTWARE.
 #include <fstream>
 #include <string>
 #include <vector>
+#include <time.h>
 using namespace std;
 
 class Chromosome;
@@ -112,6 +113,7 @@ private:
     void readCoursePref(ifstream &input, vector<string>);
     void readProfPref(ifstream &input);
     void readParameters(ifstream &input);
+    void prepareDataStatistics( );
     int getWeightedRandomIndividual( );
     string PrintTableFormat( );
     string GetFitnessData( );

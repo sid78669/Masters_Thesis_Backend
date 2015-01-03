@@ -40,7 +40,16 @@ int main() {
     p.PrintEnd( );
     endTime = getCPUTime();
     ofstream statFile;
-    statFile.open("stat.txt", ofstream::out || ofstream::app);
+#ifdef _WIN32    
+    char * hostnameChr = 0;
+    size_t sz = 0;
+    _dupenv_s(&hostnameChr, &sz, "COMPUTERNAME");
+    string hostname(hostnameChr);
+    delete[ ] hostnameChr;
+#elif __linux
+    string hostname = getenv("COMPUTERNAME");
+#endif
+    statFile.open(hostname + "-stat.txt", ofstream::out || ofstream::app); 
     statFile << "CPU time used = " << ( endTime - startTime ) << endl;
     statFile.close( );
     fprintf(stdout, "CPU time used = %lf\n", (endTime - startTime));

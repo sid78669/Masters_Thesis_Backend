@@ -43,9 +43,21 @@ REPAIR_TRIES(100) {
     professor_count = 0;
     credit_count = 0;
     timeslot_count = 0;
-    statFile.open("stat.txt", ofstream::out);
-    debug.open("debug.txt", ofstream::out);
-    outputFile.open("output.txt", ofstream::out);
+#ifdef _WIN32    
+    char * hostnameChr = 0;
+    size_t sz = 0;
+    _dupenv_s(&hostnameChr, &sz, "COMPUTERNAME");
+    string hostname(hostnameChr);
+    delete[ ] hostnameChr;
+#elif __linux
+    string hostname = getenv("COMPUTERNAME");
+#endif
+    statFile.open(hostname + "-stat.txt", ofstream::out);
+    cout << "Stat file: " << hostname << "-stat.txt" << endl;
+    debug.open(hostname + "-debug.txt", ofstream::out);
+    cout << "Debug file: " << hostname << "-debug.txt" << endl;
+    outputFile.open(hostname + "-output.txt", ofstream::out);
+    cout << "Output file: " << hostname << "-output.txt" << endl;
     //Setup the Individuals array
     readDatFiles( );
 
@@ -182,6 +194,8 @@ void Population::readDatFiles( ) {
     cout << endl;
     weakestIndividualID = 0;
 
+    prepareDataStatistics( );
+
     //individualValidity[ 0 ] = individuals[ 0 ]->isValid();
     statFile << "First Valid: " << individuals[ 0 ]->isValid( ) << endl << endl;
 
@@ -206,6 +220,90 @@ void Population::readDatFiles( ) {
 
     statFile << "0," << GetFitnessData( );
 } //end readDatFiles()
+
+void Population::prepareDataStatistics( ) {
+    int min = section_count, max = 0, total = 0;
+    double mean = 0.0;
+    //Get min, max, mean incompatible sections per section
+    for(int index = 0; index < section_count; ++index) {
+        total += incompatibleSections[ index ][ 0 ];
+        if(min > incompatibleSections[ index ][ 0 ]) {
+            min = incompatibleSections[ index ][ 0 ];
+        }
+        if(max < incompatibleSections[ index ][ 0 ]) {
+            max = incompatibleSections[ index ][ 0 ];
+        }
+    }
+    mean = (double)total / (double)section_count;
+    statFile << "Incompatible Sections: " << endl;
+    statFile << "Range: [" << min << "," << max << "]" << endl;
+    statFile << "Mean: " << fixed << setprecision(2) << mean << endl << endl;
+
+    //Get min, max, mean professor per section
+    min = professor_count;
+    max = 0;
+    total = 0;
+    mean = 0.0;
+    for(int index = 0; index < section_count; ++index) {
+        total += sectionProf[ index ][ 0 ];
+        if(min > sectionProf[ index ][ 0 ]) {
+            min = sectionProf[ index ][ 0 ];
+        }
+        if(max < sectionProf[ index ][ 0 ]) {
+            max = sectionProf[ index ][ 0 ];
+        }
+    }
+    mean = ( double ) total / ( double ) section_count;
+    statFile << "Professors Per Section: " << endl;
+    statFile << "Range: [" << min << "," << max << "]" << endl;
+    statFile << "Mean: " << fixed << setprecision(2) << mean << endl << endl;
+
+    //Get min, max, mean sections per professor
+    min = section_count;
+    max = 0;
+    total = 0;
+    mean = 0.0;
+    for(int index = 0; index < professor_count; ++index) {
+        total += profSection[ index ][ 0 ];
+        if(min > profSection[ index ][ 0 ]) {
+            min = profSection[ index ][ 0 ];
+        }
+        if(max < profSection[ index ][ 0 ]) {
+            max = profSection[ index ][ 0 ];
+        }
+    }
+    mean = ( double ) total / ( double ) professor_count;
+    statFile << "Sections Per Professor: " << endl;
+    statFile << "Range: [" << min << "," << max << "]" << endl;
+    statFile << "Mean: " << fixed << setprecision(2) << mean << endl << endl;
+
+    //Get min, max, mean timeslots per section
+    min = timeslot_count;
+    max = 0;
+    total = 0;
+    mean = 0.0;
+    for(int index = 0; index < section_count; ++index) {
+        int timeIndex = 0;
+                
+        while(timeCredLegend[ timeIndex ] != sectionCredit[ index ])
+            timeIndex++;        
+        
+        total += creditTimeSlot[ timeIndex ][ 0 ];
+        if(min > creditTimeSlot[ timeIndex ][ 0 ]) {
+            min = creditTimeSlot[ timeIndex ][ 0 ];
+        }
+        if(max < creditTimeSlot[ timeIndex ][ 0 ]) {
+            max = creditTimeSlot[ timeIndex ][ 0 ];
+        }
+    }
+    mean = ( double ) total / ( double ) professor_count;
+    statFile << "Timeslots per Section: " << endl;
+    statFile << "Range: [" << min << "," << max << "]" << endl;
+    statFile << "Mean: " << fixed << setprecision(2) << mean << endl << endl;
+
+    statFile << "Initial Stat Complete..." << endl << endl << endl;
+
+}//end prepareDataStatistics()
 
 void Population::readParameters(ifstream &inFile) {
     string currLine;
