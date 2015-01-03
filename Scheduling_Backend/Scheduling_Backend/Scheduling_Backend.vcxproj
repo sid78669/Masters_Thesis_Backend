@@ -71,7 +71,7 @@
     <ClInclude Include="PeriodData.h" />
     <ClInclude Include="Population.h" />
     <ClInclude Include="TimeSlot.h" />
-    <ClInclude Include="Utility.h" />
+    <ClInclude Include="Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Chromosome.cpp" />

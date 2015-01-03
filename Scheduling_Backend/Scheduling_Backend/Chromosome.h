@@ -37,7 +37,7 @@ THE SOFTWARE.
 #define DEBUG_VALIDATE 0
 #define MAX_FITNESS 100000
 
-#include "Utility.h"
+#include "Utility.cpp"
 #include "Gene.h"
 #include "Helper.h"
 #include "TimeSlot.h"
@@ -88,11 +88,11 @@ public:
 
 private:
     //ostream * debug;
-    const int PENALTY_INCOMPATIBLE_PROF_TIME_PENALTY = 15;
-    const int PENALTY_UNBALANCED_PROFESSOR = 15;
-    const int PENATLY_TIME_CONFLICT = 15;
-    const int PENATLY_TIME_PROFESSOR_PREFERENCE = 5;
-    const int PENATLY_TIME_SECTION_PREFERENCE = 5;
+    static const int PENALTY_INCOMPATIBLE_PROF_TIME_PENALTY = 15;
+    static const int PENALTY_UNBALANCED_PROFESSOR = 15;
+    static const int PENATLY_TIME_CONFLICT = 15;
+    static const int PENATLY_TIME_PROFESSOR_PREFERENCE = 5;
+    static const int PENATLY_TIME_SECTION_PREFERENCE = 5;
     Gene ** genes;
     double * professorCredits;
     double * professorCreditsInitial;
