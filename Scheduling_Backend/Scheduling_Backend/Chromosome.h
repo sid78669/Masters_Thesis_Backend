@@ -86,7 +86,14 @@ public:
     
 
 private:
-    //ostream * debug;
+    static const int PENALTY_SECTION_TIME_CONFLICT = 10;
+    static const int PENALTY_PROFESSOR_TIME_CONFLICT = 10;
+    static const int PENALTY_PROFESSOR_LOAD = 20;
+    static const int PENALTY_PROFESSOR_PREFERENCE = 5;
+    static const int PENALTY_SECTION_PREFERENCE = 5;
+    static const int PENATLY_PROFESSOR_CONSECUTIVE_TIMES = 5;
+    static const int PENATLY_PROFESSOR_SPREADOUT_TIMES = 5;
+
     Gene ** genes;
     double * professorCredits;
     double * professorCreditsInitial;

@@ -536,7 +536,7 @@ void Chromosome::optimize(int ** sectionProf, int ** creditTimeSlot, TimeSlot **
                             setProf(sectionIdx, profToSwapWith, sectionCredit[ sectionIdx ]);
                             setProf(newSectionIdx, currentProf, sectionCredit[ newSectionIdx ]);
                             //check valid
-                            validate(incompatibleSections);
+                            validate(incompatibleSections, timeSlots);
                             updateFitness(incompatibleSections, sectionPref, profPref, timeSlots, timeslot_count, profSection);
                             //Check if swap was valid and it is better fitness
                             if(!valid && fitness > startingFitness) {
@@ -616,6 +616,7 @@ void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref,
     fitness = MAX_FITNESS;
     bool * profConflict = new bool[ gene_length ];
     int numConflicts = 0;
+    vector<int> * professorTimeSlotsAssigned = new vector<int>[ prof_count ];
     //Check for hard constraint violation for professor
     for(int left = 0; left < gene_length; left++) {
         if(left < 0)
@@ -630,12 +631,13 @@ void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref,
                     if(DEBUG_FITNESS)
                         cout << "Incompatible Prof Time: " << left << " with " << right << endl;
                     //Create penalty based on Max_Fitness divided by professor count.
-                    int penalty = MAX_FITNESS / ( prof_count );
-                    //Increase the penalty based on the number of sections being taught by the prof.
-                    if(profSectionsTaught[ leftProf ][ 0 ] > (( gene_length * 1.0 ) / prof_count))
-                        penalty *= profSectionsTaught[ leftProf ][ 0 ];
-                    numConflicts++;
-                    fitness -= penalty;
+                    //int penalty = MAX_FITNESS / ( prof_count );
+                    ////Increase the penalty based on the number of sections being taught by the prof.
+                    //if(profSectionsTaught[ leftProf ][ 0 ] > (( gene_length * 1.0 ) / prof_count))
+                    //    penalty *= profSectionsTaught[ leftProf ][ 0 ];
+                    //numConflicts++;
+                    //fitness -= penalty;
+                    fitness -= PENALTY_PROFESSOR_TIME_CONFLICT;
                     profConflict[ left ] = true;
                 }
                 else
@@ -650,7 +652,8 @@ void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref,
             if(DEBUG_FITNESS) {
                 cout << "Professor Overload: " << p << endl;
             }
-            fitness -= MAX_FITNESS / prof_count;
+            //fitness -= MAX_FITNESS / prof_count;
+            fitness -= PENALTY_PROFESSOR_LOAD;
         }
     }
 
@@ -662,25 +665,26 @@ void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref,
         for(int right = 1; right <= incompatibleSections[ left ][ 0 ]; right++) {
             if(incompatibleSections[ left ][ right ] <= left)
                 continue;
-            int rightTime =
-                genes[ incompatibleSections[ left ][ right ] ]->getTimeID( );
+            int rightTime = genes[ incompatibleSections[ left ][ right ] ]->getTimeID( );
             if(leftTime == rightTime) {
                 if(DEBUG_FITNESS)
                     cout << "Incompatible Time: " << left << " with " << right
                     << endl;
-                if(!profConflict[ left ]) {
-                    int penalty = MAX_FITNESS / ( gene_length );
-                    if(incompatibleSections[ left ][ 0 ] > 2)
-                        penalty *= incompatibleSections[ left ][ 0 ];
-                    numConflicts++;
-                    fitness -= penalty;
-                }
-                else
-                    fitness -= MAX_FITNESS;
+                //if(!profConflict[ left ]) {
+                //    int penalty = MAX_FITNESS / ( gene_length );
+                //    if(incompatibleSections[ left ][ 0 ] > 2)
+                //        penalty *= incompatibleSections[ left ][ 0 ];
+                //    numConflicts++;
+                //    fitness -= penalty;
+                //}
+                //else
+                //    fitness -= MAX_FITNESS;
+                fitness -= PENALTY_SECTION_TIME_CONFLICT;
             }
         }
     }
-    fitness -= ( numConflicts * ( prof_count + gene_length ) );
+    //fitness -= ( numConflicts * ( prof_count + gene_length ) );
+
     //Check for soft constraint for prof time preference.
     for(int secID = 0; secID < gene_length; secID++) {
         if(timeSlots[ genes[ secID ]->getTimeID( ) ] != NULL) {
@@ -689,7 +693,8 @@ void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref,
             if(DEBUG_FITNESS) {
                 ; //cout << "Allotment: " << profPref[genes[secID].getProfID( )][timeAlloted] << " Penalty: " << MAX_FITNESS << "/" << pow(prof_count + gene_length, 2.0) << " = " << MAX_FITNESS / pow((prof_count + gene_length), 2.0) << endl;
             }
-            fitness -= profPref[ genes[ secID ]->getProfID( ) ][ timeAlloted ] * MAX_FITNESS / ( int ) pow(( prof_count + gene_length ), 2.0);
+            //fitness -= profPref[ genes[ secID ]->getProfID( ) ][ timeAlloted ] * MAX_FITNESS / ( int ) pow(( prof_count + gene_length ), 2.0);
+            fitness -= profPref[ genes[ secID ]->getProfID( ) ][ timeAlloted ] * PENALTY_PROFESSOR_PREFERENCE;
         }
         else {
             fitness -= MAX_FITNESS;
@@ -699,7 +704,8 @@ void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref,
     //Check for soft constraint for section time preference.
     for(int secID = 0; secID < gene_length; secID++) {
         int timeAlloted = timeSlots[ genes[ secID ]->getTimeID( ) ]->isMorning( ) ? 0 : ( timeSlots[ genes[ secID ]->getTimeID( ) ]->isAfternoon( ) ? 1 : 2 );
-        fitness -= sectionPref[ secID ][ timeAlloted ] * MAX_FITNESS / ( int ) pow(( prof_count + gene_length ), 2.0);
+        //fitness -= sectionPref[ secID ][ timeAlloted ] * MAX_FITNESS / ( int ) pow(( prof_count + gene_length ), 2.0);
+        fitness -= sectionPref[ secID ][ timeAlloted ] * PENALTY_SECTION_PREFERENCE;
     }
 
     //Check for soft constraint for more than 2 consecutive classes or spread out classes.
@@ -711,13 +717,13 @@ void Chromosome::updateFitness(int ** incompatibleSections, int ** sectionPref,
                     for(int third = second + 1; third < ( signed ) professorTimeSlotsAssigned[ profIndex ].size( ); ++third) {
                         if(timeSlots[ second ]->isConsecutive(timeSlots[ third ])) {
                             //Bingo! Three consecutive timeslots.
-                            penalty += PENATLY_PROFESSOR_CONSECUTIVE_TIMES;
+                            fitness -= PENATLY_PROFESSOR_CONSECUTIVE_TIMES;
                         }
                     }
                 }
                 //Check for soft constraint for disjoint classes for the professor (morning and evening, no afternoon)
                 else if(timeSlots[ first ]->isSpreadOut(timeSlots[ second ])) {
-                    penalty += PENATLY_PROFESSOR_SPREADOUT_TIMES;
+                    fitness -= PENATLY_PROFESSOR_SPREADOUT_TIMES;
                 }
             }
         }

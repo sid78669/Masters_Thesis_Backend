@@ -820,7 +820,7 @@ void Population::Evolve( ) {
     int generationSinceLastReplacement = 0;
 
     int currentGeneration = 1;
-    int threshold_generation = ( int ) ( ( double ) generation_count * 1 );
+    int threshold_generation = ( int ) ( ( double ) generation_count * .5 );
     cout << "Total generations to evolve over: " << generation_count << endl;
     cout << "Threshold for invalid individuals " << threshold_generation << endl;
     cout << "Current Generation: ";
