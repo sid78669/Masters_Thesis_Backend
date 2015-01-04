@@ -42,6 +42,7 @@ THE SOFTWARE.
 #include "Helper.cpp"
 #include "TimeSlot.h"
 #include "PeriodData.h"
+#include <string>
 #include <iostream>
 #include <iomanip>
 #include <math.h>
@@ -93,6 +94,8 @@ private:
     static const int PENATLY_TIME_CONFLICT = 15;
     static const int PENATLY_TIME_PROFESSOR_PREFERENCE = 5;
     static const int PENATLY_TIME_SECTION_PREFERENCE = 5;
+    static const int PENATLY_PROFESSOR_CONSECUTIVE_TIMES = 5;
+    static const int PENATLY_PROFESSOR_SPREADOUT_TIMES = 5;
     Gene ** genes;
     double * professorCredits;
     double * professorCreditsInitial;
@@ -104,7 +107,7 @@ private:
     void updateProfLoad(double * sectionCredit);
     bool validProfessorLoad(int profID);
     bool validProfessorLoadChange(int profID, double creditChange);
-    void validate(int ** incompatibleSections);
+    void validate(int ** incompatibleSections, TimeSlot ** timeSlots);
 };
 
 #endif

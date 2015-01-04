@@ -55,11 +55,12 @@ public:
     void setCredits(double);
 
     double getCredits( );
-    bool isOverlap(TimeSlot);
+    bool isOverlap(TimeSlot *);
     bool isMorning( );
     bool isAfternoon( );
     bool isEvening( );
-    bool isConsecutive(TimeSlot);
+    bool isConsecutive(TimeSlot *);
+    bool isSpreadOut(TimeSlot *);
     int getStartQuarter(int day);
     int getEndQuarter(int day);
 
