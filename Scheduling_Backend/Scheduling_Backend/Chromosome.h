@@ -41,7 +41,6 @@ THE SOFTWARE.
 #include "Gene.h"
 #include "Helper.cpp"
 #include "TimeSlot.h"
-#include "PeriodData.h"
 #include <string>
 #include <iostream>
 #include <iomanip>
@@ -73,14 +72,13 @@ public:
     string print( );
     string getProfessorLoads( );
     string print(int gene);
+    string printTuple( );
     string printTable(TimeSlot ** timeSlots, int timeslot_count);
     string printTable(TimeSlot ** timeSlots, int timeslot_count, double * sectionCredit);
     string printProfTable( );
-
-    void mutate(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, double mutation_probability, double * sectionCredit);
-    void repair(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, int ** incompatibleSections, const int REPAIR_TRIES, double * sectionCredit, int ** profSection);
-    void updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots, int timeslot_count, int ** profSection);
+    void evolve(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, double mutation_probability, double * sectionCredit, int ** incompatibleSections, const int REPAIR_TRIES, int ** profSection, int ** sectionPref, int ** profPref, int timeslot_count);
     void optimize(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, int ** incompatibleSections, double * sectionCredit, int ** profSection, int ** sectionPref, int ** profPref, int timeslot_count); 
+    void updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots, int timeslot_count, int ** profSection);
     bool isValid( );
     friend bool operator==(Chromosome &ch1, Chromosome &ch2);
     
@@ -105,6 +103,8 @@ private:
     bool validProfessorLoad(int profID);
     bool validProfessorLoadChange(int profID, double creditChange);
     void validate(int ** incompatibleSections, TimeSlot ** timeSlots);
+    void mutate(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, double mutation_probability, double * sectionCredit);
+    void repair(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, int ** incompatibleSections, const int REPAIR_TRIES, double * sectionCredit, int ** profSection);
 };
 
 #endif

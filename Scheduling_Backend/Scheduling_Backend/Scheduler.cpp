@@ -28,20 +28,18 @@ THE SOFTWARE.
 
 
 #include "Population.h"
-//#include "getCPUTime.c"
-#include "Timing.cpp"
+#include "getCPUTime.c"
 
 int main( ) {
     double startTime, endTime;
-    //startTime = getCPUTime( );
-    startTime = get_cpu_time( );
-    Population p("new_input.dat");
+    startTime = getCPUTime( );
+    //Population p("new_input.dat");
+    Population p("updated_input.dat");    
     p.Evolve( );
     cout << endl << "End Evolution" << endl;
     cout << "*********************************************************************" << endl;
     p.PrintEnd( );
-    //endTime = getCPUTime( );
-    endTime = get_cpu_time( );
+    endTime = getCPUTime( );
     ofstream statFile;
     string file = "stat" + to_string(p.suffix_cntr) + ".txt";
     statFile.open(file, ofstream::out | ofstream::app);

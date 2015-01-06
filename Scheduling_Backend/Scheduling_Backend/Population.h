@@ -60,14 +60,14 @@ class Chromosome;
 
 class Population {
 public:
-    //Population(string dataFilePath, int populationSize, int generationCount, int replacementWait, double mutationProbability);
-    Population(string dataFilePath);
-    void Evolve( );
-    void PrintEnd( );
-    virtual ~Population( );
-    friend ostream & operator<<(ostream & os, const Population &source);
-    int suffix_cntr;
+    Population(string dataFilePath); //Constructor
+    void Evolve( ); //Evolution 
+    void PrintEnd( ); //Final output 
+    virtual ~Population( ); //Destructor
+    friend ostream & operator<<(ostream & os, const Population &source); //overloaded '<<' operator
+    int suffix_cntr; //File suffix
 private:
+    //Self-identifying variables.
     string data_file_path;
     double mutation_probability; 
     double initFitness;
@@ -85,40 +85,40 @@ private:
     int highestFitnessSeen;
     const int REPAIR_TRIES;
 
-    Helper h;
-    Chromosome **individuals;
-    TimeSlot ** timeSlots;
+    Helper h; //Random number generating helper
+    Chromosome **individuals; //Population array
+    TimeSlot ** timeSlots; //timeslot array
     
-    int ** incompatibleSections;
-    int ** creditTimeSlot;
-    int ** sectionProf;
-    int ** profSection;
-    int ** courseSection;
-    int ** sectionPref;
-    int ** profPref;
-    double * timeCredLegend;
-    double * sectionCredit;
-    double * profCreditMax;
+    int ** incompatibleSections; //list of incompatible section for each section
+    int ** creditTimeSlot;//list of timeslot for each credit
+    int ** sectionProf; //list of professor for each section
+    int ** profSection; //list of section for each professor
+    int ** courseSection; //list of section for each course
+    int ** sectionPref; //list of preferences for each section
+    int ** profPref; //list of preferences for each prof
+    double * timeCredLegend; //credit value of each timeslot
+    double * sectionCredit; //credit value of each section
+    double * profCreditMax; //max credits for each professor
 
     ofstream statFile;
     ofstream outputFile;
     ofstream debug;
 
-    void readDatFiles( );
-    void readSectionList(ifstream &input, vector<string> &);
-    void readCourseList(ifstream &input, vector<string>);
-    void readProfessorList(ifstream &input, vector<string>);
-    void readTimeSlotList(ifstream &input);
-    void readInitialSchedule(ifstream &input);
-    void initPopulationFromFirst( );
-    void readCoursePref(ifstream &input, vector<string>);
-    void readProfPref(ifstream &input);
-    void readParameters(ifstream &input);
-    void prepareDataStatistics( );
-    int getWeightedRandomIndividual( );
+    void readDatFiles( ); //Read the input data file
+    void readSectionList(ifstream &input, vector<string> &); //Read section list
+    void readCourseList(ifstream &input, vector<string>); //Read the course list
+    void readProfessorList(ifstream &input, vector<string>); //Read the professor list
+    void readTimeSlotList(ifstream &input); //Read the timeslot list
+    void readInitialSchedule(ifstream &input); //Read the initial schedule
+    void initPopulationFromFirst( ); //Create the initial population from the initial schedule
+    void readCoursePref(ifstream &input, vector<string>); //Read the course time preferences
+    void readProfPref(ifstream &input); //Read professor time preferences
+    void readParameters(ifstream &input); //Read parameters for the program
+    void prepareDataStatistics( ); //Prepare data statistics about input
+    int getWeightedRandomIndividual( ); //Get weighted random individual
     string PrintTableFormat( );
-    string GetFitnessData( );
-    bool allValid( );
+    string GetFitnessData( ); //Get a string showing the fitness data of the population
+    bool allValid( ); //Check if all individuals are valid
     bool allValid(int currentGeneration );
 };
 

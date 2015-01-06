@@ -198,6 +198,21 @@ string Chromosome::print(int geneID) {
         + to_string(genes[ geneID ]->getTimeID( ));
 }
 
+string Chromosome::printTuple( ) {
+    stringstream rtnVal;
+    for(int i = 0; i < gene_length; ++i) {
+        rtnVal << i << "," << print(i) << endl;
+    }
+
+    return rtnVal.str( );
+}
+
+void Chromosome::evolve(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, double mutation_probability, double * sectionCredit, int ** incompatibleSections, const int REPAIR_TRIES, int ** profSection, int ** sectionPref, int ** profPref, int timeslot_count) {
+    mutate(sectionProf, creditTimeSlot, timeSlots, timeCredLegend, timeCredLegendSize, h, mutation_probability, sectionCredit);
+    repair(sectionProf, creditTimeSlot, timeSlots, timeCredLegend, timeCredLegendSize, h, incompatibleSections, REPAIR_TRIES, sectionCredit, profSection);
+    updateFitness(incompatibleSections, sectionPref, profPref, timeSlots, timeslot_count, profSection);
+}
+
 void Chromosome::mutate(int ** sectionProf, int ** creditTimeSlot,
                         TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize,
                         Helper * h, double mutation_probability, double * sectionCredit) {
@@ -245,27 +260,24 @@ void Chromosome::mutate(int ** sectionProf, int ** creditTimeSlot,
         cout << "Finished Mutating." << endl;
 }
 
-void Chromosome::repair(int ** sectionProf, int ** creditTimeSlot,
-                        TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize,
-                        Helper * h, int ** incompatibleSections, const int REPAIR_TRIES,
-                        double * sectionCred, int ** profSection) {
-                    /*
-                     //    Do a loop for maximum of REPAIR_TRIES. Each time keep a boolean
-                     //    that will keep track of whether repairs were made or not. If
-                     //    after an iteration no repairs have been made, then the individual
-                     //    is good and repair is complete.
-                     //
-                     //    To perform repair, follow the taboo list principle. Do a look
-                     //    ahead to see if there is anything that will hard conflict with the
-                     //    current gene. If it will, replace the gene with other options, and
-                     //    put the current values into the taboo list. Only look for genes on
-                     //    the left that will conflict, don't worry about what we have already
-                     //    seen.
-                     //
-                     //    If an individual cannot be repaired, ignore it. It will probably
-                     //    not replace anything as the fitness will be much lower for it. If
-                     //    it replaces anything, than it was probably for the best.
-                     //    */
+void Chromosome::repair(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize,
+                        Helper * h, int ** incompatibleSections, const int REPAIR_TRIES, double * sectionCred, int ** profSection) {
+
+    //    Do a loop for maximum of REPAIR_TRIES. Each time keep a boolean
+    //    that will keep track of whether repairs were made or not. If
+    //    after an iteration no repairs have been made, then the individual
+    //    is good and repair is complete.
+    //
+    //    To perform repair, follow the taboo list principle. Do a look
+    //    ahead to see if there is anything that will hard conflict with the
+    //    current gene. If it will, replace the gene with other options, and
+    //    put the current values into the taboo list. Only look for genes on
+    //    the left that will conflict, don't worry about what we have already
+    //    seen.
+    //
+    //    If an individual cannot be repaired, ignore it. It will probably
+    //    not replace anything as the fitness will be much lower for it. If
+    //    it replaces anything, than it was probably for the best.
 
     bool currentIterationRepaired = false;
 
@@ -291,25 +303,21 @@ void Chromosome::repair(int ** sectionProf, int ** creditTimeSlot,
                         profID = sectionProf[ secIndex ][ 1 ];
                     }
                     else {
-                        profID =
-                            sectionProf[ secIndex ][ h->randNum(1, compProfs) ];
+                        profID = sectionProf[ secIndex ][ h->randNum(1, compProfs) ];
                     }
 
                     //Check if the new prof can handle the load.
-                    if(professorCredits[ profID ]
-                       - sectionCred[ secIndex ] >= DELTA_MAX) {
+                    if(professorCredits[ profID ] - sectionCred[ secIndex ] >= DELTA_MAX) {
                    //If the prof is not in the taboo list, set it as the new prof and break out of the loop.
                         setProf(secIndex, profID, sectionCred[ secIndex ]);
                         break;
                     }
-                } while(--looped >= 0);
+                } while(--looped > 0);
                 updateProfLoad(sectionCred);
             } //if(professorCredits[ genes[ secIndex ]->getProfID( ) ] < DELTA_MAX)
 
             //Now check for incompatible sections.
-            for(int conflictSection = 1;
-            conflictSection <= incompatibleSections[ secIndex ][ 0 ];
-                ++conflictSection) {
+            for(int conflictSection = 1; conflictSection <= incompatibleSections[ secIndex ][ 0 ]; ++conflictSection) {
                 int right = incompatibleSections[ secIndex ][ conflictSection ];
 
                 //We want to ensure that this is a look ahead search. Hence, if the conflicting section is
@@ -318,13 +326,9 @@ void Chromosome::repair(int ** sectionProf, int ** creditTimeSlot,
                     continue;
 
                 //Check if time and prof conflict. In that case, switch prof
-                if(genes[ secIndex ]->getTimeID( ) == genes[ right ]->getTimeID( )
-                   && genes[ secIndex ]->getProfID( )
-                   == genes[ right ]->getProfID( )) {
+                if(genes[ secIndex ]->getTimeID( ) == genes[ right ]->getTimeID( ) && genes[ secIndex ]->getProfID( ) == genes[ right ]->getProfID( )) {
                     if(DEBUG_REPAIR)
-                        cout << "Time and Prof Collision for "
-                        << genes[ secIndex ]->getTimeID( ) << " and "
-                        << genes[ right ]->getTimeID( ) << endl;
+                        cout << "Time and Prof Collision for " << genes[ secIndex ]->getTimeID( ) << " and " << genes[ right ]->getTimeID( ) << endl;
 
                     currentIterationRepaired = true;
 
@@ -342,31 +346,25 @@ void Chromosome::repair(int ** sectionProf, int ** creditTimeSlot,
                             profID = sectionProf[ right ][ 1 ];
                         }
                         else {
-                            profID =
-                                sectionProf[ right ][ h->randNum(1, compProfs) ];
+                            profID = sectionProf[ right ][ h->randNum(1, compProfs) ];
                         }
 
                         //Check if the new prof selected is in the taboo list.
-                        if(find(tabooProf[ right ].begin( ),
-                            tabooProf[ right ].end( ), profID)
-                            == tabooProf[ right ].end( )) {
+                        if(find(tabooProf[ right ].begin( ), tabooProf[ right ].end( ), profID) == tabooProf[ right ].end( )) {
                         //If the prof is not in the taboo list, set it as the new prof and break out of the loop.
                             setProf(right, profID, sectionCred[ right ]);
                             break;
                         }
-                    } while(--looped >= 0);
+                    } while(--looped > 0 && compProfs != 1);
                 } // if(genes[ secIndex ]->getTimeID( ) == genes[ right ]->getTimeID( ) && genes[ secIndex ]->getProfID( ) == genes[ right ]->getProfID( ))
-                else if(genes[ secIndex ]->getTimeID( )
-                        == genes[ right ]->getTimeID( )) {
+                else if(genes[ secIndex ]->getTimeID( ) == genes[ right ]->getTimeID( )) {
                     //Add the current time to the taboo list for time for the conflicting section
                     tabooTime[ right ].push_back(genes[ right ]->getTimeID( ));
 
                     int timeRow = 0;
 
-                    while(timeRow < timeCredLegendSize
-                          && timeCredLegend[ timeRow ]
-                          != timeSlots[ genes[ right ]->getTimeID( ) ]->getCredits( ))
-                          timeRow++;
+                    while(timeRow < timeCredLegendSize && timeCredLegend[ timeRow ] != timeSlots[ genes[ right ]->getTimeID( ) ]->getCredits( ))
+                        timeRow++;
 
                     int compTimes = creditTimeSlot[ timeRow ][ 0 ];
 
@@ -376,21 +374,19 @@ void Chromosome::repair(int ** sectionProf, int ** creditTimeSlot,
                         //Get a random time from the list timeslots for the given number of credits.
                         int timeID = -1;
                         if(compTimes != 1) {
-                            timeID = creditTimeSlot[ timeRow ][ h->randNum(1,
-                                                                           compTimes) ];
+                            //timeID = creditTimeSlot[ timeRow ][ h->randNum(1, compTimes) ];
+                            timeID = creditTimeSlot[ timeRow ][ looped ];
                         }
                         else
                             timeID = creditTimeSlot[ timeRow ][ 1 ];
 
                         //Check if the time is in the taboo list or not.
-                        if(find(tabooTime[ right ].begin( ),
-                            tabooTime[ right ].end( ), timeID)
-                            == tabooTime[ right ].end( )) {
+                        if(find(tabooTime[ right ].begin( ), tabooTime[ right ].end( ), timeID) == tabooTime[ right ].end( )) {
                             genes[ right ]->setTimeID(timeID);
                             break;
                         }
 
-                    } while(--looped >= 0);
+                    } while(--looped > 0 && compTimes != 1);
                 } //else if(genes[ secIndex ]->getTimeID( ) == genes[ right ]->getTimeID( ))
                 updateProfLoad(sectionCred);
             } //for(int conflictSection = 1; conflictSection <= incompatibleSections[ secIndex ][ 0 ]; ++conflictSection)
@@ -399,8 +395,7 @@ void Chromosome::repair(int ** sectionProf, int ** creditTimeSlot,
         for(int currentprof = 0; currentprof < prof_count; ++currentprof) {
             double currentProfessorCredit = professorCredits[ currentprof ];
             int iteration = REPAIR_TRIES;
-            while(( currentProfessorCredit < DELTA_MAX
-                || currentProfessorCredit > DELTA_MIN ) && iteration-- >= 0) {
+            while(!( currentProfessorCredit >= DELTA_MAX && currentProfessorCredit <= DELTA_MIN ) && iteration-- >= 0) {
                 if(currentProfessorCredit < DELTA_MAX) {
                     //Handle overload
                     /*
@@ -409,19 +404,14 @@ void Chromosome::repair(int ** sectionProf, int ** creditTimeSlot,
                      3. Give this section to the underloaded professor.
                      4. Check if the professor is within DELTA of his credit load.
                      */
-                    for(int sectionTaught = 1;
-                    sectionTaught <= profSection[ currentprof ][ 0 ];
-                        ++sectionTaught) {
+                    for(int sectionTaught = 1; sectionTaught <= profSection[ currentprof ][ 0 ]; ++sectionTaught) {
                         int sec = profSection[ currentprof ][ sectionTaught ];
                         //Check if prof is assigned this section.
                         if(genes[ sec ]->getProfID( ) == currentprof) {
                             //Find an underloaded professor.
-                            for(int secondProfIndex = 1;
-                            secondProfIndex <= sectionProf[ sec ][ 0 ];
-                                ++secondProfIndex) {
-                                int secondProf =
-                                    sectionProf[ sec ][ secondProfIndex ];
-                                if(professorCredits[ secondProf ] > DELTA_MIN) {
+                            for(int secondProfIndex = 1; secondProfIndex <= sectionProf[ sec ][ 0 ]; ++secondProfIndex) {
+                                int secondProf = sectionProf[ sec ][ secondProfIndex ];
+                                if(professorCredits[ secondProf ] >= DELTA_MIN) {
                                     //Switch the courses between the professors.
                                     genes[ sec ]->setProfID(secondProf);
                                     currentProfessorCredit += sectionCred[ sec ];
@@ -430,8 +420,7 @@ void Chromosome::repair(int ** sectionProf, int ** creditTimeSlot,
                                 } //if(professorCredits[ secondProf ] > DELTA_MIN)
                             }
                         } //if(genes[ sec ]->getProfID( ) == currentprof)
-                        if(currentProfessorCredit >= DELTA_MAX
-                           && currentProfessorCredit <= DELTA_MIN) {
+                        if(currentProfessorCredit >= DELTA_MAX && currentProfessorCredit <= DELTA_MIN) {
                             break;
                         } //for(int secondProfIndex = 1; secondProfIndex <= sectionProf[ sec ][ 0 ]; ++secondProfIndex)
                     } //for(int sectionTaught = 1; sectionTaught <= profSection[ currentprof ][ 0 ]; ++sectionTaught)
@@ -444,34 +433,30 @@ void Chromosome::repair(int ** sectionProf, int ** creditTimeSlot,
                      3. Give this section to the underloaded professor.
                      4. Check if the professor is within DELTA of his credit load.
                      */
-                    for(int sectionTaught = 1;
-                    sectionTaught <= profSection[ currentprof ][ 0 ];
-                        ++sectionTaught) {
+                    for(int sectionTaught = 1; sectionTaught <= profSection[ currentprof ][ 0 ]; ++sectionTaught) {
                         int sec = profSection[ currentprof ][ sectionTaught ];
                         //Check if prof assigned to this section is overloaded
-                        if(professorCredits[ genes[ sec ]->getProfID( ) ]
-                           < DELTA_MAX) {
-                       //Found an overloaded professor.
-                       //Switch the courses between the professors.
+                        if(professorCredits[ genes[ sec ]->getProfID( ) ] <= DELTA_MAX) {
+                           //Found an overloaded professor.
+                           //Switch the courses between the professors.
                             genes[ sec ]->setProfID(currentprof);
                             currentProfessorCredit -= sectionCred[ sec ];
                             currentIterationRepaired = true;
                             break;
                         }
-                        if(currentProfessorCredit >= DELTA_MAX
-                           && currentProfessorCredit <= DELTA_MIN) {
+                        if(currentProfessorCredit >= DELTA_MAX && currentProfessorCredit <= DELTA_MIN) {
                             break;
                         }
                     } //for(int sectionTaught = 1; sectionTaught <= profSection[ currentprof ][ 0 ]; ++sectionTaught)
-                }                 //else if(currentProfessorCredit > DELTA_MIN)
-                                  //Update the load for all professors.
+                } //else if(currentProfessorCredit > DELTA_MIN)
+
+                //Update the load for all professors.
                 updateProfLoad(sectionCred);
             } //while(( currentProfessorCredit < DELTA_MAX || currentProfessorCredit > DELTA_MIN ) && iteration-- >= 0)
         } //for(int currentprof = 0; currentprof < prof_count; ++currentprof)
 
         if(tries > 0 && DEBUG_REPAIR)
-            cout << "Try " << tries << ": Any Repairs? "
-            << currentIterationRepaired << endl;
+            cout << "Try " << tries << ": Any Repairs? " << currentIterationRepaired << endl;
         updateProfLoad(sectionCred);
     } while(++tries < REPAIR_TRIES && currentIterationRepaired);
 
