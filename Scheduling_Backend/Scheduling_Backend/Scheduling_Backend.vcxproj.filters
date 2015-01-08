@@ -79,6 +79,9 @@
     <None Include="new_input.dat">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="input.dat">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="courses.dat">

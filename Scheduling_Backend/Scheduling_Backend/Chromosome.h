@@ -45,6 +45,7 @@ THE SOFTWARE.
 #include <iostream>
 #include <iomanip>
 #include <math.h>
+#include <set>
 #include <algorithm>
 
 using namespace std;
@@ -57,7 +58,7 @@ public:
     Chromosome(const Chromosome *);
     Chromosome(const Chromosome &);
     virtual ~Chromosome( );
-    Chromosome& operator=(const Chromosome &source);
+    Chromosome& operator=( const Chromosome &source );
 
     void setTime(int geneID, int newTime);
     void setProf(int geneID, int newProf, double courseCred);
@@ -76,12 +77,14 @@ public:
     string printTable(TimeSlot ** timeSlots, int timeslot_count);
     string printTable(TimeSlot ** timeSlots, int timeslot_count, double * sectionCredit);
     string printProfTable( );
-    void evolve(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, double mutation_probability, double * sectionCredit, int ** incompatibleSections, const int REPAIR_TRIES, int ** profSection, int ** sectionPref, int ** profPref, int timeslot_count);
-    void optimize(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, int ** incompatibleSections, double * sectionCredit, int ** profSection, int ** sectionPref, int ** profPref, int timeslot_count); 
-    void updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots, int timeslot_count, int ** profSection);
+    void evolve( int **const sectionProf,  int ** const creditTimeSlot,  TimeSlot ** const timeSlots,  double * const timeCredLegend,  int const timeCredLegendSize,  Helper * const h,  double const mutation_probability,  double * const sectionCredit,  int ** const incompatibleSections,  int REPAIR_TRIES,  int ** const profSection,  int ** const sectionPref,  int ** const profPref,  int const timeslot_count);
+    void optimize(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, int ** incompatibleSections, double * sectionCredit, int ** profSection, int ** sectionPref, int ** profPref, int timeslot_count);
+    //void updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots, int timeslot_count, int ** profSection);
+    void updateFitness( int ** incompatibleSections,  int ** sectionPref,  int ** profPref,  TimeSlot ** timeSlots,  int timeslot_count,  int ** profSection);
+    void updateProfLoad( double * sectionCredit);
     bool isValid( );
-    friend bool operator==(Chromosome &ch1, Chromosome &ch2);
-    
+    friend bool operator==( Chromosome &ch1, Chromosome &ch2 );
+
 
 private:
     static const int PENALTY_SECTION_TIME_CONFLICT = 10;
@@ -99,12 +102,12 @@ private:
     int prof_count;
     int fitness;
     bool valid;
-    void updateProfLoad(double * sectionCredit);
+
     bool validProfessorLoad(int profID);
     bool validProfessorLoadChange(int profID, double creditChange);
     void validate(int ** incompatibleSections, TimeSlot ** timeSlots);
     void mutate(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, double mutation_probability, double * sectionCredit);
-    void repair(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, int ** incompatibleSections, const int REPAIR_TRIES, double * sectionCredit, int ** profSection);
+    void repair(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, int ** incompatibleSections, const int REPAIR_TRIES, double * sectionCredit, int ** profSection);   
 };
 
 #endif

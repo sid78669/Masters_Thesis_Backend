@@ -87,6 +87,7 @@
       <FileType>Document</FileType>
     </Text>
     <None Include="init.dat" />
+    <None Include="input.dat" />
     <None Include="inputFiles.dat" />
     <None Include="new_input.dat" />
     <None Include="professors.dat" />
