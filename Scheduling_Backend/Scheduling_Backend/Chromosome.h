@@ -41,6 +41,7 @@ THE SOFTWARE.
 #include "Gene.h"
 #include "Helper.cpp"
 #include "TimeSlot.h"
+#include <bitset>
 #include <string>
 #include <iostream>
 #include <iomanip>
@@ -77,10 +78,10 @@ public:
     string printTable(TimeSlot ** timeSlots, int timeslot_count);
     string printTable(TimeSlot ** timeSlots, int timeslot_count, double * sectionCredit);
     string printProfTable( );
-    void evolve( int **const sectionProf,  int ** const creditTimeSlot,  TimeSlot ** const timeSlots,  double * const timeCredLegend,  int const timeCredLegendSize,  Helper * const h,  double const mutation_probability,  double * const sectionCredit,  int ** const incompatibleSections,  int REPAIR_TRIES,  int ** const profSection,  int ** const sectionPref,  int ** const profPref,  int const timeslot_count);
-    void optimize(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, int ** incompatibleSections, double * sectionCredit, int ** profSection, int ** sectionPref, int ** profPref, int timeslot_count);
-    //void updateFitness(int ** incompatibleSections, int ** sectionPref, int ** profPref, TimeSlot ** timeSlots, int timeslot_count, int ** profSection);
-    void updateFitness( int ** incompatibleSections,  int ** sectionPref,  int ** profPref,  TimeSlot ** timeSlots,  int timeslot_count,  int ** profSection);
+    //void evolve(int * sortedSectionList, int ** sectionProf, int ** creditTimeSlot, double * timeCredits, double * timeCredLegend, Helper * h, double mutation_probability, double * sectionCredit, bool ** incompatibleSectionsMatrix, int timeslot_count, bool ** timeslotConflict, int credit_count, int ** profSection, int *** associatedProfessors, int ** sectionPref, int ** profPref, bool ** timeslotDaytime, bool ** timeslotConsecutive, bool ** timeslotSpread);
+    void evolve(int * const sortedSectionList, int ** const sectionProf, int ** const creditTimeSlot, double * const timeCredits, double * const timeCredLegend, Helper * const h, double const mutation_probability, double * const sectionCredit, bool ** const incompatibleSectionsMatrix, int timeslot_count, bool ** const timeslotConflict, int credit_count, int ** const profSection, int *** const associatedProfessors, int ** const sectionPref, int ** const profPref, bool ** const timeslotDaytime, bool ** const timeslotConsecutive, bool ** const timeslotSpread);
+    void optimize(int ** sectionProf, int ** creditTimeSlot, double * timeCredLegend, int timeCredLegendSize, Helper * h, double * sectionCredit, int ** profSection, int ** sectionPref, int ** profPref, int timeslot_count, bool ** incompatibleSectionsMatrix, bool ** timeslotConflict);
+    void updateFitness(bool ** incompatibleSectionsMatrix, int ** sectionPref, int ** profPref, int timeslot_count, bool ** timeslotDaytime, bool ** timeslotConflict, bool ** timeslotConsecutive, bool ** timeslotSpread);
     void updateProfLoad( double * sectionCredit);
     bool isValid( );
     friend bool operator==( Chromosome &ch1, Chromosome &ch2 );
@@ -102,12 +103,15 @@ private:
     int prof_count;
     int fitness;
     bool valid;
+    bool * visitedProfessors;
 
     bool validProfessorLoad(int profID);
     bool validProfessorLoadChange(int profID, double creditChange);
-    void validate(int ** incompatibleSections, TimeSlot ** timeSlots);
-    void mutate(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, double mutation_probability, double * sectionCredit);
-    void repair(int ** sectionProf, int ** creditTimeSlot, TimeSlot ** timeSlots, double * timeCredLegend, int timeCredLegendSize, Helper * h, int ** incompatibleSections, const int REPAIR_TRIES, double * sectionCredit, int ** profSection);   
+    void validate(bool ** incompatibleSectionsMatrix, bool ** timeslotConflict);
+    void mutate(int * sortedSectionList, int ** sectionProf, int ** creditTimeSlot, double * timeCredits, double * timeCredLegend, int timeCredLegendSize, Helper * h, double mutation_probability, double * sectionCredit);
+    void repair(int * sortedSectionList, bool ** incompatibleSectionsMatrix, int timeslot_count, bool ** timeslotConflict, double * sectionCredit, int credit_count, double * timeCredLegend, int ** creditTimeSlot, int ** sectionProf, int ** profSection, int *** associatedProfessors);
+    void balanceProfLoad(int ** sectionProf, int ** profSection, double * sectionCredit, int *** associatedProfessors);
+    int shiftSection(int target, int parentID, int profID, vector<int> * sectionsTaught, int ** sectionProf, int ** profSection, double * sectionCredit, int *** associatedProfessors);
 };
 
 #endif

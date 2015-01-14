@@ -54,6 +54,8 @@ THE SOFTWARE.
 #include <string>
 #include <vector>
 #include <time.h>
+#include <functional>
+
 using namespace std;
 
 class Chromosome;
@@ -90,17 +92,27 @@ private:
     
 
     //Inorder of being read or generated
-    int ** incompatibleSections; //list of incompatible section for each section
+    //int ** incompatibleSections; //list of incompatible section for each section
+    bool ** incompatibleSectionsMatrix; //Adjacency matrix for incompatible sections.
     double * sectionCredit; //credit value of each section
     double * profCreditMax; //max credits for each professor
     int ** sectionProf; //list of professor for each section
     int ** profSection; //list of section for each professor
     int ** sectionPref; //list of preferences for each section
     int ** profPref; //list of preferences for each prof
+    int *** associatedProfessors; //list of professors that are associated by a course.
     double * timeCredLegend; //legend for creditTimeSlot Array
     int ** creditTimeSlot;//list of timeslot for each credit
+
+    double * timeCredits;
+    bool ** timeslotDaytime;
+    bool ** timeslotConflict;
+    bool ** timeslotConsecutive;
+    bool ** timeslotSpread;
+
+    int * sortedSectionList;
+    bool sortByProfessorCount(int i, int j);
     
-    TimeSlot ** timeSlots; //timeslot array
     Chromosome **individuals; //Population array
 
     Helper h; //Random number generating helper
@@ -114,8 +126,9 @@ private:
     void readSectionList(ifstream &input); //Read section list
     void readSectionCreditList(ifstream &input); //Read section list
     void readProfessorCreditList(ifstream &input); //Read section list
-    void readSectionProfessorList(ifstream &input); //Read section list
-    void readProfessorSectionList(ifstream &input); //Read section list
+    void readSectionProfessorList(ifstream &input); //Read section prof list
+    void readProfessorSectionList(ifstream &input); //Read prof section list
+    void readAssociatedProfessorList(ifstream &input);//Read associated professor list
     void readCoursePref(ifstream &input); //Read the course time preferences
     void readProfPref(ifstream &input); //Read professor time preferences
     void readTimeCreditLegend(ifstream &input);// Read time credit legend
