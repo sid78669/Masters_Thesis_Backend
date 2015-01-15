@@ -212,7 +212,8 @@ void Population::readDatFiles( ) {
     for(int i = 0; i < section_count; i++) {
         tempSortedSectionList.push_back(i);
     }
-    sort(tempSortedSectionList.begin( ), tempSortedSectionList.end( ), bind(&Population::sortByProfessorCount, this, std::placeholders::_1, std::placeholders::_2));
+    //sort(tempSortedSectionList.begin( ), tempSortedSectionList.end( ), bind(&Population::sortByProfessorCount, this, std::placeholders::_1, std::placeholders::_2));
+    sort(tempSortedSectionList.begin( ), tempSortedSectionList.end( ), bind(&Population::sortByTimeslotCount, this, std::placeholders::_1, std::placeholders::_2));
 
     for(int i = 0; i < section_count; ++i) {
         sortedSectionList[ i ] = tempSortedSectionList.at(i);
@@ -268,6 +269,18 @@ void Population::readDatFiles( ) {
 
 bool Population::sortByProfessorCount(int i, int j) {
     return sectionProf[ i ][ 0 ] > sectionProf[ j ][ 0 ];
+}
+
+bool Population::sortByTimeslotCount(int i, int j) {
+    int creditTimeRow_i = 0, creditTimeRow_j = 0;
+
+    //Get the timeslot row for i
+    while(creditTimeRow_i < credit_count && sectionCredit[ i ] != timeCredLegend[ creditTimeRow_i ])
+        creditTimeRow_i++;
+    //Get the timeslot row for j
+    while(creditTimeRow_j < credit_count && sectionCredit[ j ] != timeCredLegend[ creditTimeRow_j ])
+        creditTimeRow_j++;
+    return creditTimeSlot[ creditTimeRow_i ][ 0 ] > creditTimeSlot[ creditTimeRow_j ][ 0 ];
 }
 
 void Population::prepareDataStatistics( ) {
@@ -867,6 +880,7 @@ void Population::Evolve( ) {
             debug << "Sacrifice: " << endl << sacrifice->print( ) << "Source: " << endl << individuals[ sacrificeID ]->print( ) << endl;
         }
 
+        sacrifice->evolve(sortedSectionList, sectionProf, creditTimeSlot, timeCredits, timeCredLegend, &h, mutation_probability, sectionCredit, incompatibleSectionsMatrix, timeslot_count, timeslotConflict, credit_count, profSection, associatedProfessors, sectionPref, profPref, timeslotDaytime, timeslotConsecutive, timeslotSpread);
         //sacrifice->evolve(sectionProf, creditTimeSlot, timeSlots, timeCredLegend, credit_count, &h, mutation_probability, sectionCredit, incompatibleSections, REPAIR_TRIES, profSection, sectionPref, profPref, timeslot_count);
         if(currentGeneration > threshold_generation && !sacrifice->isValid( ) && generationLoop < replacement_wait) {
             generationLoop++;
@@ -878,7 +892,8 @@ void Population::Evolve( ) {
             generationLoop = 0;
             //Only optimize if the sacrifice is valid.
             if(sacrifice->isValid( )) {
-                ///sacrifice->optimize(sectionProf, creditTimeSlot, timeSlots, timeCredLegend, credit_count, &h, incompatibleSections, sectionCredit, profSection, sectionPref, profPref, timeslot_count);
+                sacrifice->optimize(sectionProf, creditTimeSlot, timeCredLegend, credit_count, &h, sectionCredit, profSection, sectionPref, profPref, timeslot_count, incompatibleSectionsMatrix, timeslotConflict);
+                //sacrifice->optimize(sectionProf, creditTimeSlot, timeSlots, timeCredLegend, credit_count, &h, incompatibleSections, sectionCredit, profSection, sectionPref, profPref, timeslot_count);
                 if(allValid(currentGeneration) && generationOfFullValidity > currentGeneration && currentGeneration > threshold_generation) {
                     statFile << endl << endl << "All Valid: " << currentGeneration << endl << endl;
                     generationOfFullValidity = currentGeneration;
@@ -1014,7 +1029,6 @@ void Population::PrintEnd( ) {
     outputFile << "**BEGINRESULT**" << endl;
     outputFile << individuals[ strongestIndividualID ]->printTuple( );
     outputFile << "**ENDRESULT**" << endl;
-    //outputFile << individuals[ strongestIndividualID ]->printTable(timeSlots, timeslot_count);
     outputFile << "Fitness: "
         << strongestFitness << "%"
         << endl;
@@ -1023,7 +1037,7 @@ void Population::PrintEnd( ) {
     if(improvement < 0)
         improvement *= -1.0;
     outputFile << "Improvement from Initial Schedule: " << improvement << "%" << endl;
-    outputFile << "Valid: " << ( individuals[ strongestIndividualID ]->isValid( ) ? "Yes" : "No" ) << endl;
+    outputFile << "Valid: " << ( individuals[ strongestIndividualID ]->isValid(incompatibleSectionsMatrix, timeslotConflict, true) ? "Yes" : "No" ) << endl;
 
     outputFile << "Professor Schedule: " << endl << individuals[ strongestIndividualID ]->printProfTable( ) << endl;
 

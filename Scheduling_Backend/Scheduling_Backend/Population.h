@@ -112,6 +112,7 @@ private:
 
     int * sortedSectionList;
     bool sortByProfessorCount(int i, int j);
+    bool sortByTimeslotCount(int i, int j);
     
     Chromosome **individuals; //Population array
 

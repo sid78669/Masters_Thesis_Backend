@@ -131,6 +131,11 @@ bool Chromosome::isValid( ) {
     return valid;
 }
 
+bool Chromosome::isValid(bool ** incompatibleSectionsMatrix, bool ** timeslotConflict, bool verbose) {
+    validate(incompatibleSectionsMatrix, timeslotConflict, verbose);
+    return valid;
+}
+
 void Chromosome::setTime(int geneID, int newTime) {
     if(genes[ geneID ]) {
         genes[ geneID ]->setTimeID(newTime);
@@ -450,84 +455,232 @@ void Chromosome::mutate(int * sortedSectionList, int ** sectionProf, int ** cred
 //        cout << "Gene Repaired to the best of the abilities..." << endl;
 //}
 
-int Chromosome::shiftSection(int target, int parentID, int profID, vector<int> * sectionsTaught, int ** sectionProf, int ** profSection, double * sectionCredit, int *** associatedProfessors) {
-    cout << "Shift Section with parent: " << parentID << " and prof " << profID << endl;
+string Chromosome::shiftSectionToOverloaded(int target, int parentID, int profID, int ** sectionProf, int ** profSection, double * sectionCredit, int *** associatedProfessors) {
+    if(DEBUG_BALANCEPROFLOAD)
+        cout << "Shift Section with parent: " << parentID << " and prof " << profID << endl;
     visitedProfessors[ profID ] = true;
     if(professorCredits[ profID ] > 0) {
+    CURRENTPROFUNDERLOADED:
         int profIDIndex = 1;
         for(; profIDIndex <= associatedProfessors[ parentID ][ 0 ][ 0 ]; ++profIDIndex) {
             if(profID == associatedProfessors[ parentID ][ profIDIndex ][ 0 ])
                 break;
         }
-        for(int sTeach = 2; sTeach <= associatedProfessors[ parentID ][ profIDIndex ][ 1 ]; ++sTeach) {
-            if(find(sectionsTaught[ parentID ].begin( ), sectionsTaught[ parentID ].end( ), associatedProfessors[ parentID ][ profIDIndex ][ sTeach ]) != sectionsTaught[ parentID ].end( ) && genes[ associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] ]->getProfID( ) == parentID)
-                sectionsTaught[ profID ].push_back(associatedProfessors[ parentID ][ profIDIndex ][ sTeach ]);
-            return associatedProfessors[ parentID ][ profIDIndex ][ sTeach ];
+        for(int sTeach = 2; sTeach <= associatedProfessors[ parentID ][ profIDIndex ][ 1 ] + 1; ++sTeach) {
+            if(genes[ associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] ]->getProfID( ) == parentID) {
+                //cout << "Returning: " << associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] << endl;
+                return to_string(associatedProfessors[ parentID ][ profIDIndex ][ sTeach ]) + "," + to_string(associatedProfessors[ parentID ][ profIDIndex ][ 0 ]);
+            }
+            //cout << genes[ associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] ]->getProfID( ) << " is teaching " << associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] << endl;
         }
+        if(DEBUG_BALANCEPROFLOAD)
+            cout << "Unable to find a shared section between " << parentID << " and prof " << profID << endl;
+        if(professorCredits[ profID ] > 0)
+            visitedProfessors[ profID ] = false;
+        return "";
     }
 
     for(int associateIndex = 1; associateIndex <= associatedProfessors[ profID ][ 0 ][ 0 ]; ++associateIndex) {
-        if(visitedProfessors[ associatedProfessors[ profID ][ associateIndex ][ 0 ] ] || professorCredits[ associatedProfessors[ profID ][ associateIndex ][ 0 ]] < 0)
+        if(professorCredits[ profID ] > 0)
+            goto CURRENTPROFUNDERLOADED;
+        if(visitedProfessors[ associatedProfessors[ profID ][ associateIndex ][ 0 ] ] || professorCredits[ associatedProfessors[ profID ][ associateIndex ][ 0 ] ] < 0 || associatedProfessors[ profID ][ associateIndex ][ 0 ] == target)
             continue;
-
-        int sectionToTransfer = shiftSection(target, profID, associatedProfessors[ profID ][ associateIndex ][ 0 ], sectionsTaught, sectionProf, profSection, sectionCredit, associatedProfessors);
-        if(sectionToTransfer != -1) {
-            int newProf = 0;
-            for(int pid = 1; pid <= sectionProf[ sectionToTransfer ][ 0 ]; ++pid) {
-                if(professorCredits[ sectionProf[ sectionToTransfer ][ pid ] ] > 0)
-                    newProf = sectionProf[ sectionToTransfer ][ pid ];
-            }
-            genes[ sectionToTransfer ]->setProfID(newProf);
+        bool good = false;
+        for(int x = 2; x <= associatedProfessors[ profID ][ associateIndex ][ 1 ] + 1 && !good; ++x) {
+            if(genes[ associatedProfessors[ profID ][ associateIndex ][ x ] ]->getProfID( ) == profID)
+                good = true;
+        }
+        if(!good)
+            continue;
+        string sectionToTransfer = shiftSectionToOverloaded(target, profID, associatedProfessors[ profID ][ associateIndex ][ 0 ], sectionProf, profSection, sectionCredit, associatedProfessors);
+        if(!sectionToTransfer.empty( )) {
+            vector<string> data = Utility::Tokenize(sectionToTransfer, ',');
+            int newProf = stoi(data.at(1));
+            int section = stoi(data.at(0));
+            genes[ section ]->setProfID(newProf);
             updateProfLoad(sectionCredit);
+            if(professorCredits[ newProf ] > 0)
+                visitedProfessors[ newProf ] = false;
             int profIDIndex = 1;
             for(; profIDIndex <= associatedProfessors[ parentID ][ 0 ][ 0 ]; ++profIDIndex) {
                 if(profID == associatedProfessors[ parentID ][ profIDIndex ][ 0 ])
                     break;
             }
-            for(int sTeach = 2; sTeach <= associatedProfessors[ parentID ][ profIDIndex ][ 1 ]; ++sTeach) {
-                if(find(sectionsTaught[ parentID ].begin( ), sectionsTaught[ parentID ].end( ), associatedProfessors[ parentID ][ profIDIndex ][ sTeach ]) != sectionsTaught[ parentID ].end( ) && genes[ associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] ]->getProfID( ) == parentID)
-                    sectionsTaught[ profID ].push_back(associatedProfessors[ parentID ][ profIDIndex ][ sTeach ]);
-                return associatedProfessors[ parentID ][ profIDIndex ][ sTeach ];
+            for(int sTeach = 2; sTeach <= associatedProfessors[ parentID ][ profIDIndex ][ 1 ] + 1; ++sTeach) {
+                if(genes[ associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] ]->getProfID( ) == parentID) {
+                    //cout << "Returning: " << associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] << endl;
+                    //return associatedProfessors[ parentID ][ profIDIndex ][ sTeach ];
+                    return to_string(associatedProfessors[ parentID ][ profIDIndex ][ sTeach ]) + "," + to_string(associatedProfessors[ parentID ][ profIDIndex ][ 0 ]);
+                }
+                //cout << genes[ associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] ]->getProfID( ) << " is teaching " << associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] << endl;
             }
         }
     }
-    return -1;
+    return "";
+}
+
+string Chromosome::shiftSectionToUnderloaded(int target, int parentID, int profID, int ** sectionProf, int ** profSection, double * sectionCredit, int *** associatedProfessors) {
+    if(DEBUG_BALANCEPROFLOAD)
+        cout << "Shift Section with parent: " << parentID << " and prof " << profID << endl;
+    visitedProfessors[ profID ] = true;
+    if(professorCredits[ profID ] < 0) {
+    CURRENTPROFOVERLOADED:
+        int profIDIndex = 1;
+        for(; profIDIndex <= associatedProfessors[ parentID ][ 0 ][ 0 ]; ++profIDIndex) {
+            if(profID == associatedProfessors[ parentID ][ profIDIndex ][ 0 ])
+                break;
+        }
+        for(int sTeach = 2; sTeach <= associatedProfessors[ parentID ][ profIDIndex ][ 1 ] + 1; ++sTeach) {
+            if(genes[ associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] ]->getProfID( ) == profID) {
+                //cout << "Returning: " << associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] << endl;
+                return to_string(associatedProfessors[ parentID ][ profIDIndex ][ sTeach ]) + "," + to_string(associatedProfessors[ parentID ][ profIDIndex ][ 0 ]);
+            }
+            //cout << genes[ associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] ]->getProfID( ) << " is teaching " << associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] << endl;
+        }
+        if(DEBUG_BALANCEPROFLOAD)
+            cout << "Unable to find a shared section between " << parentID << " and prof " << profID << endl;
+        if(professorCredits[ profID ] < 0)
+            visitedProfessors[ profID ] = false;
+        return "";
+    }
+
+    for(int associateIndex = 1; associateIndex <= associatedProfessors[ profID ][ 0 ][ 0 ]; ++associateIndex) {
+        if(professorCredits[ profID ] < 0)
+            goto CURRENTPROFOVERLOADED;
+        if(visitedProfessors[ associatedProfessors[ profID ][ associateIndex ][ 0 ] ] || professorCredits[ associatedProfessors[ profID ][ associateIndex ][ 0 ] ] > 0 || associatedProfessors[ profID ][ associateIndex ][ 0 ] == target)
+            continue;
+        bool good = false;
+        for(int x = 2; x <= associatedProfessors[ profID ][ associateIndex ][ 1 ] + 1 && !good; ++x) {
+            if(genes[ associatedProfessors[ profID ][ associateIndex ][ x ] ]->getProfID( ) == associatedProfessors[ profID ][ associateIndex ][ 0 ])
+                good = true;
+        }
+        if(!good)
+            continue;
+        string sectionToTransfer = shiftSectionToUnderloaded(target, profID, associatedProfessors[ profID ][ associateIndex ][ 0 ], sectionProf, profSection, sectionCredit, associatedProfessors);
+        if(!sectionToTransfer.empty( )) {
+            vector<string> data = Utility::Tokenize(sectionToTransfer, ',');
+            int newProf = stoi(data.at(1));
+            int section = stoi(data.at(0));
+            genes[ section ]->setProfID(profID);
+            updateProfLoad(sectionCredit);
+            if(professorCredits[ newProf ] < 0)
+                visitedProfessors[ newProf ] = false;
+            int profIDIndex = 1;
+            for(; profIDIndex <= associatedProfessors[ parentID ][ 0 ][ 0 ]; ++profIDIndex) {
+                if(profID == associatedProfessors[ parentID ][ profIDIndex ][ 0 ])
+                    break;
+            }
+            for(int sTeach = 2; sTeach <= associatedProfessors[ parentID ][ profIDIndex ][ 1 ] + 1; ++sTeach) {
+                if(genes[ associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] ]->getProfID( ) == profID) {
+                    //cout << "Returning: " << associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] << endl;
+                    return to_string(associatedProfessors[ parentID ][ profIDIndex ][ sTeach ]) + "," + to_string(associatedProfessors[ parentID ][ profIDIndex ][ 0 ]);
+                }
+                //cout << genes[ associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] ]->getProfID( ) << " is teaching " << associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] << endl;
+            }
+        }
+    }
+    return "";
 }
 
 
 void Chromosome::balanceProfLoad(int ** sectionProf, int ** profSection, double * sectionCredit, int *** associatedProfessors)
 {
-    vector<int> * sectionsTaught = new vector<int>[ prof_count ];
-
-    for(int i = 0; i < gene_length; ++i) {
-        sectionsTaught[ genes[ i ]->getProfID( ) ].push_back(i);
-    }
-
-    for(int profID = 0; profID < prof_count; ++profID) {
-        if(professorCredits[ profID ] < DELTA_MAX ) {
-            visitedProfessors = new bool[ prof_count ]( );
-            visitedProfessors[ profID ] = true;
-            cout << "Starting with " << profID << endl;
-            //Go through the associates to find a professor that can transfer classes.
-            while(professorCredits[ profID ] < DELTA_MAX) {
-                for(int associateIndex = 1; associateIndex <= associatedProfessors[ profID ][ 0 ][ 0 ]; ++associateIndex) {
-                    cout << "Associate: " << associatedProfessors[ profID ][ associateIndex ][ 0 ] << endl;
-                    int sectionToShift = shiftSection(profID, profID, associatedProfessors[ profID ][ associateIndex ][ 0 ], sectionsTaught, sectionProf, profSection, sectionCredit, associatedProfessors);
-                    if(sectionToShift == -1)
-                        continue;
-                    for(int i = 0; i <= sectionProf[ sectionToShift ][ 0 ]; ++i) {
-                        if(professorCredits[ sectionProf[ sectionToShift ][ i ] ] > 0) {
-                            genes[ sectionToShift ]->setProfID(sectionProf[ sectionToShift ][ i ]);
-                            updateProfLoad(sectionCredit);
+    bool noChange = true;
+    int tries = 0;
+    do {
+        noChange = true;
+        for(int profID = 0; profID < prof_count; ++profID) {
+            if(professorCredits[ profID ] < DELTA_MAX) {
+                noChange = false;
+                visitedProfessors = new bool[ prof_count ]( );
+                visitedProfessors[ profID ] = true;
+                if(DEBUG_BALANCEPROFLOAD)
+                    cout << "Starting with " << profID;
+                    //Go through the associates to find a professor that can transfer classes.
+                while(professorCredits[ profID ] < DELTA_MAX) {
+                    int associateIndex = 1;
+                    for(; associateIndex <= associatedProfessors[ profID ][ 0 ][ 0 ] && professorCredits[ profID ] < DELTA_MAX; ++associateIndex) {
+                        if(DEBUG_BALANCEPROFLOAD)
+                            cout << " Associate: " << associatedProfessors[ profID ][ associateIndex ][ 0 ] << endl;
+                        bool good = false;
+                        for(int x = 2; x <= associatedProfessors[ profID ][ associateIndex ][ 1 ] + 1; ++x) {
+                            if(genes[ associatedProfessors[ profID ][ associateIndex ][ x ] ]->getProfID( ) == profID) {
+                                good = true;
+                                break;
+                            }
                         }
+                        if(!good)
+                            continue;
+                        string sectionToShift = shiftSectionToOverloaded(profID, profID, associatedProfessors[ profID ][ associateIndex ][ 0 ], sectionProf, profSection, sectionCredit, associatedProfessors);
+                        if(sectionToShift.empty( ))
+                            continue;
+                        vector<string> data = Utility::Tokenize(sectionToShift, ',');
+                        int newProf = stoi(data.at(1));
+                        int section = stoi(data.at(0));
+                        genes[ section ]->setProfID(newProf);
+                        updateProfLoad(sectionCredit);
+                        if(professorCredits[ newProf ] > 0)
+                            visitedProfessors[ newProf ] = false;
+
                     }
+                    //Check if we went through all profs to try and balance this.
+                    if(associateIndex > associatedProfessors[ profID ][ 0 ][ 0 ])
+                        break;
+                }
+                delete[ ] visitedProfessors;
+                if(DEBUG_BALANCEPROFLOAD) {
+                    if(professorCredits[ profID ] < DELTA_MAX)
+                        cout << "Unable to balance " << profID << " :(" << endl;
+                    else
+                        cout << profID << " balanced. :)" << endl;
                 }
             }
-            delete[ ] visitedProfessors;
-        }
-    }
+            else if(professorCredits[ profID ] > DELTA_MIN) {
+                noChange = false;
+                visitedProfessors = new bool[ prof_count ]( );
+                visitedProfessors[ profID ] = true;
+                if(DEBUG_BALANCEPROFLOAD)
+                    cout << "Starting with " << profID;
 
-    delete[ ] sectionsTaught;
+                    //Go through the associates to find a professor that can transfer classes.
+                while(professorCredits[ profID ] > DELTA_MIN) {
+                    int associateIndex = 1;
+                    for(; associateIndex <= associatedProfessors[ profID ][ 0 ][ 0 ] && professorCredits[ profID ] > DELTA_MIN; ++associateIndex) {
+                        if(DEBUG_BALANCEPROFLOAD)
+                            cout << " Associate: " << associatedProfessors[ profID ][ associateIndex ][ 0 ] << endl;
+                        string sectionToShift = shiftSectionToUnderloaded(profID, profID, associatedProfessors[ profID ][ associateIndex ][ 0 ], sectionProf, profSection, sectionCredit, associatedProfessors);
+                        if(sectionToShift.empty( ))
+                            continue;
+                        vector<string> data = Utility::Tokenize(sectionToShift, ',');
+                        int newProf = stoi(data.at(1));
+                        int section = stoi(data.at(0));
+                        genes[ section ]->setProfID(profID);
+                        updateProfLoad(sectionCredit);
+                        if(professorCredits[ newProf ] < 0)
+                            visitedProfessors[ newProf ] = false;
+                    }
+                    //Check if we went through all profs to try and balance this.
+                    if(associateIndex > associatedProfessors[ profID ][ 0 ][ 0 ])
+                        break;
+                }
+                delete[ ] visitedProfessors;
+                if(DEBUG_BALANCEPROFLOAD) {
+                    if(professorCredits[ profID ] > DELTA_MIN)
+                        cout << "Unable to balance " << profID << " :(" << endl;
+                    else
+                        cout << profID << " balanced. :)" << endl;
+                }
+            }
+        }
+    } while(!noChange && ++tries < REPAIR_MAX);
+}
+
+bool Chromosome::professorsBalanced( ) {
+    for(int i = 0; i < prof_count; ++i) {
+        if(!(professorCredits[ i ] >= DELTA_MAX && professorCredits[i] <= DELTA_MIN))
+            return false;
+    }
+    return true;
 }
 
 void Chromosome::repair(int * sortedSectionList, bool ** incompatibleSectionsMatrix, int timeslot_count, bool ** timeslotConflict, double * sectionCredit, int credit_count, double * timeCredLegend, int ** creditTimeSlot, int ** sectionProf, int ** profSection, int *** associatedProfessors) {
@@ -550,14 +703,20 @@ void Chromosome::repair(int * sortedSectionList, bool ** incompatibleSectionsMat
                         creditTimeRow++;
                     sectionTimeTabooList[ currentSection ][ genes[ currentSection ]->getTimeID( ) ] = true;
                     int potentialTimeslotIndex = 1;
+
                     for(; potentialTimeslotIndex <= creditTimeSlot[ creditTimeRow ][ 0 ] && sectionTimeTabooList[ currentSection ][ creditTimeSlot[ creditTimeRow ][ potentialTimeslotIndex ] ]; ++potentialTimeslotIndex) {
                         ;
                     }
                     genes[ currentSection ]->setTimeID(creditTimeSlot[ creditTimeRow ][ potentialTimeslotIndex ]);
+
                 }
             }
         }
     }
+    for(int i = 0; i < gene_length; ++i) {
+        delete[ ] sectionTimeTabooList[ i ];
+    }
+    delete[ ] sectionTimeTabooList;
 }
 
 void Chromosome::optimize(int ** sectionProf, int ** creditTimeSlot, double * timeCredLegend, int timeCredLegendSize, Helper * h, double * sectionCredit, int ** profSection, int ** sectionPref, int ** profPref, int timeslot_count, bool ** incompatibleSectionsMatrix, bool ** timeslotConflict) {
@@ -609,14 +768,13 @@ void Chromosome::optimize(int ** sectionProf, int ** creditTimeSlot, double * ti
                             setProf(sectionIdx, profToSwapWith, sectionCredit[ sectionIdx ]);
                             setProf(newSectionIdx, currentProf, sectionCredit[ newSectionIdx ]);
                             //check valid
-                            validate(incompatibleSectionsMatrix, timeslotConflict);
-                            //updateFitness(incompatibleSections, sectionPref, profPref, timeSlots, timeslot_count, profSection);
+                            validate(incompatibleSectionsMatrix, timeslotConflict, false);
+
                             //Check if swap was valid and it is better fitness
                             if(!valid && fitness > startingFitness) {
                                 //Undo the swap
                                 setProf(sectionIdx, currentProf, sectionCredit[ sectionIdx ]);
                                 setProf(newSectionIdx, profToSwapWith, sectionCredit[ newSectionIdx ]);
-                                //updateFitness(incompatibleSections, sectionPref, profPref, timeSlots, timeslot_count, profSection);
                                 continue;
                             }
                             else {
@@ -635,8 +793,9 @@ void Chromosome::optimize(int ** sectionProf, int ** creditTimeSlot, double * ti
     } //for(; sectionIdx < gene_length; ++sectionIdx)
 }
 
-void Chromosome::validate(bool ** incompatibleSectionsMatrix, bool ** timeslotConflict) {
+void Chromosome::validate(bool ** incompatibleSectionsMatrix, bool ** timeslotConflict, bool verbose) {
     valid = true;
+    bool localValid = true;
     /*
      First, I will try to ensure that a professor is not scheduled twice at the same timeID.
      Then, I will look to ensure that no incompatible classes are scheduled at the same timeID.
@@ -647,10 +806,11 @@ void Chromosome::validate(bool ** incompatibleSectionsMatrix, bool ** timeslotCo
             cout << "Prof " << pr << " is with " << getCourseLoad(pr);
         }
         if(!( getCourseLoad(pr) >= DELTA_MAX && getCourseLoad(pr) <= DELTA_MIN )) {
-            if(DEBUG_VALIDATE) {
-                cout << " UNBALANCED!" << endl;
+            if(verbose) {
+                cout << pr << " UNBALANCED with " << getCourseLoad(pr) << endl;
             }
             valid = false;
+            localValid = false;
         }
         else {
             if(DEBUG_VALIDATE) {
@@ -663,14 +823,15 @@ void Chromosome::validate(bool ** incompatibleSectionsMatrix, bool ** timeslotCo
         int leftProf = getProf(left);
         for(int right = left + 1; right < gene_length && valid; ++right) {
             int rightProf = getProf(right);
-            if(leftProf == rightProf) {
-                int leftTime = getTime(left), rightTime = getTime(right);
-                if(leftTime == rightTime || timeslotConflict[ leftTime ][ rightTime ]) {//timeSlots[ leftTime ]->isOverlap(timeSlots[ rightTime ])) {
-                    if(DEBUG_VALIDATE)
-                        cout << "Incompatible Prof: " << left << " with " << right << endl;
-                    valid = false;
-                    break;
-                }
+            if(leftProf == rightProf && timeslotConflict[ getTime(left) ][ getTime(right) ]) {
+                //int leftTime = getTime(left), rightTime = getTime(right);
+                //if(timeslotConflict[ leftTime ][ rightTime ]) {//timeSlots[ leftTime ]->isOverlap(timeSlots[ rightTime ])) {
+                if(verbose)
+                    cout << "Incompatible Prof: " << left << " with " << right << endl;
+                valid = false;
+                localValid = false;
+                break;
+            //}
             }
         }
     }
@@ -679,17 +840,22 @@ void Chromosome::validate(bool ** incompatibleSectionsMatrix, bool ** timeslotCo
 
     for(int left = 0; left < gene_length && valid; ++left) {
         int leftTime = getTime(left);
-        for(int right = left + 1; right <= gene_length && valid; ++right) {
+        for(int right = left + 1; right < gene_length && valid; ++right) {
             if(!incompatibleSectionsMatrix[ left ][ right ])
                 continue;
             int rightTime = getTime(right);
             if(leftTime == rightTime) {
-                if(DEBUG_VALIDATE)
+                if(verbose)
                     cout << "Incompatible Sections: " << left << " with " << right - 1 << endl;
                 valid = false;
+                localValid = false;
                 break;
             }
         }
+    }
+
+    if(verbose) {
+        cout << "Validation result: " << localValid << endl;
     }
 }
 
