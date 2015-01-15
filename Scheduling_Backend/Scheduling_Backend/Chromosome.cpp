@@ -585,13 +585,13 @@ string Chromosome::shiftSectionToUnderloaded(int target, int parentID, int profI
 
 void Chromosome::balanceProfLoad(int ** sectionProf, int ** profSection, double * sectionCredit, int *** associatedProfessors)
 {
-    bool noChange = true;
+   /* bool noChange = true;
     int tries = 0;
-    do {
-        noChange = true;
+    do {*/
+        //noChange = true;
         for(int profID = 0; profID < prof_count; ++profID) {
             if(professorCredits[ profID ] < DELTA_MAX) {
-                noChange = false;
+                //noChange = false;
                 visitedProfessors = new bool[ prof_count ]( );
                 visitedProfessors[ profID ] = true;
                 if(DEBUG_BALANCEPROFLOAD)
@@ -636,7 +636,7 @@ void Chromosome::balanceProfLoad(int ** sectionProf, int ** profSection, double 
                 }
             }
             else if(professorCredits[ profID ] > DELTA_MIN) {
-                noChange = false;
+                //noChange = false;
                 visitedProfessors = new bool[ prof_count ]( );
                 visitedProfessors[ profID ] = true;
                 if(DEBUG_BALANCEPROFLOAD)
@@ -672,7 +672,7 @@ void Chromosome::balanceProfLoad(int ** sectionProf, int ** profSection, double 
                 }
             }
         }
-    } while(!noChange && ++tries < REPAIR_MAX);
+    //} while(!noChange && ++tries < REPAIR_MAX);
 }
 
 bool Chromosome::professorsBalanced( ) {
@@ -684,42 +684,46 @@ bool Chromosome::professorsBalanced( ) {
 }
 
 void Chromosome::repair(int * sortedSectionList, bool ** incompatibleSectionsMatrix, int timeslot_count, bool ** timeslotConflict, double * sectionCredit, int credit_count, double * timeCredLegend, int ** creditTimeSlot, int ** sectionProf, int ** profSection, int *** associatedProfessors) {
-    balanceProfLoad(sectionProf, profSection, sectionCredit, associatedProfessors);
-    bool ** sectionTimeTabooList = new bool*[ gene_length ];
-    for(int i = 0; i < gene_length; ++i) {
-        sectionTimeTabooList[ i ] = new bool[ timeslot_count ]( );
-    }
-    for(int index = 0; index < gene_length; ++index) {
-        int currentSection = sortedSectionList[ index ];
-        for(int otherSection = 0; otherSection < gene_length; ++otherSection) {
-            if(currentSection == otherSection)
-                continue;
-            if(incompatibleSectionsMatrix[ currentSection ][ otherSection ] || genes[ currentSection ]->getProfID( ) == genes[ otherSection ]->getProfID( )) {
-                if(timeslotConflict[ genes[ currentSection ]->getTimeID( ) ][ genes[ otherSection ]->getTimeID( ) ]) {
-                    int creditTimeRow = 0;
+    int retry = 0;
+    do {
+        balanceProfLoad(sectionProf, profSection, sectionCredit, associatedProfessors);
+        bool ** sectionTimeTabooList = new bool*[ gene_length ];
+        for(int i = 0; i < gene_length; ++i) {
+            sectionTimeTabooList[ i ] = new bool[ timeslot_count ]( );
+        }
+        for(int index = 0; index < gene_length; ++index) {
+            int currentSection = sortedSectionList[ index ];
+            for(int otherSection = 0; otherSection < gene_length; ++otherSection) {
+                if(currentSection == otherSection)
+                    continue;
+                if(incompatibleSectionsMatrix[ currentSection ][ otherSection ] || genes[ currentSection ]->getProfID( ) == genes[ otherSection ]->getProfID( )) {
+                    if(timeslotConflict[ genes[ currentSection ]->getTimeID( ) ][ genes[ otherSection ]->getTimeID( ) ]) {
+                        int creditTimeRow = 0;
 
-                    //Get the timeslot row
-                    while(creditTimeRow < credit_count && sectionCredit[ currentSection ] != timeCredLegend[ creditTimeRow ])
-                        creditTimeRow++;
-                    sectionTimeTabooList[ currentSection ][ genes[ currentSection ]->getTimeID( ) ] = true;
-                    int potentialTimeslotIndex = 1;
+                        //Get the timeslot row
+                        while(creditTimeRow < credit_count && sectionCredit[ currentSection ] != timeCredLegend[ creditTimeRow ])
+                            creditTimeRow++;
+                        sectionTimeTabooList[ currentSection ][ genes[ currentSection ]->getTimeID( ) ] = true;
+                        int potentialTimeslotIndex = 1;
 
-                    for(; potentialTimeslotIndex <= creditTimeSlot[ creditTimeRow ][ 0 ] && sectionTimeTabooList[ currentSection ][ creditTimeSlot[ creditTimeRow ][ potentialTimeslotIndex ] ]; ++potentialTimeslotIndex) {
-                        ;
+                        for(; potentialTimeslotIndex <= creditTimeSlot[ creditTimeRow ][ 0 ] && sectionTimeTabooList[ currentSection ][ creditTimeSlot[ creditTimeRow ][ potentialTimeslotIndex ] ]; ++potentialTimeslotIndex) {
+                            ;
+                        }
+                        genes[ currentSection ]->setTimeID(creditTimeSlot[ creditTimeRow ][ potentialTimeslotIndex ]);
+
                     }
-                    genes[ currentSection ]->setTimeID(creditTimeSlot[ creditTimeRow ][ potentialTimeslotIndex ]);
-
                 }
             }
         }
-    }
-    for(int i = 0; i < gene_length; ++i) {
-        delete[ ] sectionTimeTabooList[ i ];
-    }
-    delete[ ] sectionTimeTabooList;
+        for(int i = 0; i < gene_length; ++i) {
+            delete[ ] sectionTimeTabooList[ i ];
+        }
+        delete[ ] sectionTimeTabooList;
+        validate(incompatibleSectionsMatrix, timeslotConflict, false);
+    } while(!valid && ++retry < REPAIR_MAX);
 }
 
-void Chromosome::optimize(int ** sectionProf, int ** creditTimeSlot, double * timeCredLegend, int timeCredLegendSize, Helper * h, double * sectionCredit, int ** profSection, int ** sectionPref, int ** profPref, int timeslot_count, bool ** incompatibleSectionsMatrix, bool ** timeslotConflict) {
+void Chromosome::optimize(int ** sectionProf, int ** creditTimeSlot, double * timeCredLegend, int timeCredLegendSize, Helper * h, double * sectionCredit, int ** profSection, int ** sectionPref, int ** profPref, int timeslot_count, bool ** incompatibleSectionsMatrix, bool ** timeslotDaytime, bool ** timeslotConflict, bool ** timeslotConsecutive, bool ** timeslotSpread) {
     /*
     Idea:
     1. Swap 2 faculty.
@@ -769,7 +773,7 @@ void Chromosome::optimize(int ** sectionProf, int ** creditTimeSlot, double * ti
                             setProf(newSectionIdx, currentProf, sectionCredit[ newSectionIdx ]);
                             //check valid
                             validate(incompatibleSectionsMatrix, timeslotConflict, false);
-
+                            updateFitness(incompatibleSectionsMatrix, sectionPref, profPref, timeslot_count, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
                             //Check if swap was valid and it is better fitness
                             if(!valid && fitness > startingFitness) {
                                 //Undo the swap

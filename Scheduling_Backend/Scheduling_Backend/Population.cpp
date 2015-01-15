@@ -257,10 +257,10 @@ void Population::readDatFiles( ) {
 
 
     cout << endl << "Initial Setup Complete" << endl << endl;
-    statFile << "Generation, Replaced, ";
-    for(int x = 0; x < population_size; ++x) {
+    statFile << "Generation,";// Replaced, ";
+    /*for(int x = 0; x < population_size; ++x) {
         statFile << to_string(x) << ",";
-    }
+    }*/
 
     statFile << "Mean, SD;" << endl;
 
@@ -705,8 +705,8 @@ void Population::readInitialSchedule(ifstream &inFile) {
     highestFitnessSeen = individuals[ 0 ]->getFitness( );
 
     statFile << "Prof Rating: " << endl << individuals[ 0 ]->getProfessorLoads( ) << endl;
-    initFitness = ( individuals[ 0 ]->getFitness( ) *100.0 / MAX_FITNESS*1.0 );
-    statFile << "Initial Schedule Fitness: " << initFitness << "%" << endl;
+    initFitness = individuals[ 0 ]->getFitness( );
+    statFile << "Initial Schedule Fitness: " << initFitness << endl;
     cout << "First Chromosome Initialized." << endl;
 }
 
@@ -838,9 +838,9 @@ bool Population::allValid( ) {
 
 bool Population::allValid(int currentGeneration) {
     bool val = allValid( );
-    if(val) {
+    /*if(val) {
         cout << "Valid population at " << currentGeneration << endl;
-    }
+    }*/
 
     return val;
 } //end allValid(int currentGeneration)
@@ -892,7 +892,7 @@ void Population::Evolve( ) {
             generationLoop = 0;
             //Only optimize if the sacrifice is valid.
             if(sacrifice->isValid( )) {
-                sacrifice->optimize(sectionProf, creditTimeSlot, timeCredLegend, credit_count, &h, sectionCredit, profSection, sectionPref, profPref, timeslot_count, incompatibleSectionsMatrix, timeslotConflict);
+                sacrifice->optimize(sectionProf, creditTimeSlot, timeCredLegend, credit_count, &h, sectionCredit, profSection, sectionPref, profPref, timeslot_count, incompatibleSectionsMatrix, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
                 //sacrifice->optimize(sectionProf, creditTimeSlot, timeSlots, timeCredLegend, credit_count, &h, incompatibleSections, sectionCredit, profSection, sectionPref, profPref, timeslot_count);
                 if(allValid(currentGeneration) && generationOfFullValidity > currentGeneration && currentGeneration > threshold_generation) {
                     statFile << endl << endl << "All Valid: " << currentGeneration << endl << endl;
@@ -956,7 +956,7 @@ void Population::Evolve( ) {
         }
         delete sacrifice;
 
-        if(currentGeneration > 0) {// && ( ( i % 100 == 0 ) || i == 1 )) {
+        if(currentGeneration > 0) {
             statFile << currentGeneration << ",";
             statFile << GetFitnessData( );
         }
@@ -991,7 +991,7 @@ string Population::GetFitnessData( ) {
     stringstream s;
     for(int i = 0; i < population_size; ++i) {
         allFitness[ i - 1 ] = individuals[ i ]->getFitness( );
-        s << individuals[ i ]->getFitness( ) << ",";
+        //s << individuals[ i ]->getFitness( ) << ",";
     }
     double mean = Utility::CalculateMean(allFitness, population_size - 1);
     double sd = Utility::StandardDeviation(allFitness, population_size - 1, mean);
@@ -1002,8 +1002,9 @@ string Population::GetFitnessData( ) {
 
 void Population::PrintEnd( ) {
     outputFile << "Final Population:" << endl;
-    double strongestFitness = ( individuals[ strongestIndividualID ]->getFitness( )*100.0 / MAX_FITNESS*1.0 );
-    strongestFitness = ( strongestFitness < 0 ? strongestFitness * -1.0 : strongestFitness );
+    //double strongestFitness = ( individuals[ strongestIndividualID ]->getFitness( )*100.0 / MAX_FITNESS*1.0 );
+    double strongestFitness = individuals[ strongestIndividualID ]->getFitness( );
+    //strongestFitness = ( strongestFitness < 0 ? strongestFitness * -1.0 : strongestFitness );
     if(PRINT_WHOLE_POPULATION) {
         outputFile << "Printing Current Population..." << endl;
         int* fitnessValues = new int[ population_size ];
@@ -1029,14 +1030,12 @@ void Population::PrintEnd( ) {
     outputFile << "**BEGINRESULT**" << endl;
     outputFile << individuals[ strongestIndividualID ]->printTuple( );
     outputFile << "**ENDRESULT**" << endl;
-    outputFile << "Fitness: "
-        << strongestFitness << "%"
-        << endl;
-    double improvement = ( strongestFitness + abs(initFitness) ) *100.0 / abs(initFitness);
+    outputFile << "Fitness: " << strongestFitness << endl;
+    //double improvement = ( strongestFitness + abs(initFitness) ) *100.0 / abs(initFitness);
 
-    if(improvement < 0)
+    /*if(improvement < 0)
         improvement *= -1.0;
-    outputFile << "Improvement from Initial Schedule: " << improvement << "%" << endl;
+    outputFile << "Improvement from Initial Schedule: " << improvement << "%" << endl;*/
     outputFile << "Valid: " << ( individuals[ strongestIndividualID ]->isValid(incompatibleSectionsMatrix, timeslotConflict, true) ? "Yes" : "No" ) << endl;
 
     outputFile << "Professor Schedule: " << endl << individuals[ strongestIndividualID ]->printProfTable( ) << endl;
@@ -1059,18 +1058,18 @@ void Population::PrintEnd( ) {
             outputFile << "\n\n No strong valid solution found.\n" << endl;
         }
         else {
-            strongestValid = ( maxFitness*100.0 / MAX_FITNESS*1.0 );
-            strongestValid = ( strongestValid < 0 ? strongestValid * -1.0 : strongestValid );
+            strongestValid = maxFitness;
+            //strongestValid = ( strongestValid < 0 ? strongestValid * -1.0 : strongestValid );
             outputFile << "\n\nStrongest Valid Individual: " << maxFitID << endl;
             //outputFile << individuals[ maxFitID ]->printTable(timeSlots, timeslot_count);
-            outputFile << "Fitnesss: " << strongestValid << "%" << endl;
+            outputFile << "Fitnesss: " << strongestValid << endl;
             outputFile << "Valid: " << ( validFound ? "Yes" : "No" ) << endl;
             outputFile << "Professor Schedule: " << endl << individuals[ maxFitID ]->printProfTable( ) << endl;
-            improvement = ( strongestValid + abs(initFitness) ) *100.0 / abs(initFitness);
+            /*improvement = ( strongestValid + abs(initFitness) ) *100.0 / abs(initFitness);
 
             if(improvement < 0)
                 improvement *= -1.0;
-            outputFile << "Improvement from Initial Schedule: " << improvement << "%" << endl;
+            outputFile << "Improvement from Initial Schedule: " << improvement << "%" << endl;*/
         }
     }
     else {
