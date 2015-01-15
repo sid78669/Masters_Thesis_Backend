@@ -36,7 +36,7 @@ THE SOFTWARE.
 #define DELTA_MAX -2.0
 #define DELTA_MIN 2.0
 #define DEBUG_VALIDATE 0
-#define MAX_FITNESS 1000
+#define MAX_FITNESS 100000
 
 #include "Utility.cpp"
 #include "Gene.h"
