@@ -45,7 +45,6 @@ THE SOFTWARE.
 #define PRINT_WHOLE_POPULATION 0
 
 #include "Chromosome.h"
-#include "TimeSlot.h"
 #include "Utility.cpp"
 #include "Helper.cpp"
 
@@ -54,7 +53,6 @@ THE SOFTWARE.
 #include <string>
 #include <vector>
 #include <time.h>
-#include <functional>
 
 using namespace std;
 
@@ -79,6 +77,7 @@ private:
     int professor_count;
     int timeslot_count;
     int credit_count;
+    int max_fitness;
     
     //Predetermined variable
     const int REPAIR_TRIES;
@@ -98,6 +97,7 @@ private:
     double * profCreditMax; //max credits for each professor
     int ** sectionProf; //list of professor for each section
     int ** profSection; //list of section for each professor
+    int ** sectionTimeslot; //list of timeslots for each section
     int ** sectionPref; //list of preferences for each section
     int ** profPref; //list of preferences for each prof
     int *** associatedProfessors; //list of professors that are associated by a course.
@@ -128,6 +128,7 @@ private:
     void readSectionCreditList(ifstream &input); //Read section list
     void readProfessorCreditList(ifstream &input); //Read section list
     void readSectionProfessorList(ifstream &input); //Read section prof list
+    void readSectionTimeslotList(ifstream &input); //Read section timeslot list
     void readProfessorSectionList(ifstream &input); //Read prof section list
     void readAssociatedProfessorList(ifstream &input);//Read associated professor list
     void readCoursePref(ifstream &input); //Read the course time preferences

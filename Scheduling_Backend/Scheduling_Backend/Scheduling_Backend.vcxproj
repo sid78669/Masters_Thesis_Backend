@@ -70,7 +70,6 @@
     <ClInclude Include="Helper.cpp" />
     <ClInclude Include="PeriodData.h" />
     <ClInclude Include="Population.h" />
-    <ClInclude Include="TimeSlot.h" />
     <ClInclude Include="Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -79,8 +78,6 @@
     <ClCompile Include="getCPUTime.c" />
     <ClCompile Include="Population.cpp" />
     <ClCompile Include="Scheduler.cpp" />
-    <ClCompile Include="TimeSlot.cpp" />
-    <ClCompile Include="Timing.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="courses.dat">

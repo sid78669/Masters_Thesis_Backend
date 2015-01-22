@@ -24,9 +24,6 @@
     <ClInclude Include="Gene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TimeSlot.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PeriodData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -47,17 +44,11 @@
     <ClCompile Include="Gene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TimeSlot.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Scheduler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="getCPUTime.c">
       <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Timing.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
