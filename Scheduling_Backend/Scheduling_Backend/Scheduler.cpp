@@ -33,7 +33,7 @@ THE SOFTWARE.
 int main( ) {
     double startTime, endTime;
     startTime = getCPUTime( );
-    Population p("input_New_alt.dat");
+    Population p("input.dat");
     p.Evolve( );
     cout << endl << "End Evolution" << endl;
     cout << "*********************************************************************" << endl;

@@ -30,7 +30,7 @@ THE SOFTWARE.
 #include "Population.h"
 
 Population::Population(string dataFilePath):
-REPAIR_TRIES(50) {
+    REPAIR_TRIES(50) {
     data_file_path = dataFilePath;
     population_size = 0;
     generation_count = 0;
@@ -919,34 +919,21 @@ void Population::Evolve( ) {
         }
 
         sacrifice->evolve(sortedSectionList, sectionProf, sectionTimeslot, &h, mutation_probability, sectionCredit, incompatibleSectionsMatrix, timeslot_count, timeslotConflict, credit_count, profSection, associatedProfessors, sectionPref, profPref, timeslotDaytime, timeslotConsecutive, timeslotSpread);
-        
-        if(currentGeneration > threshold_generation && !sacrifice->isValid( ) && generationLoop < replacement_wait) {
-            generationLoop++;
+
+        if(currentGeneration > threshold_generation && !sacrifice->isValid( ) /*&& generationLoop < replacement_wait*/) {
+            //generationLoop++;
             currentGeneration--;
             delete sacrifice;
             continue;
         }
         if(sacrifice->getFitness( ) > individuals[ sacrificeID ]->getFitness( )) {
             generationLoop = 0;
-            if(sacrifice->isValid( )) {
-                sacrifice->optimize(sectionProf, sectionTimeslot, &h, sectionCredit, profSection, sectionPref, profPref, timeslot_count, incompatibleSectionsMatrix, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
-                if(allValid(currentGeneration) && generationOfFullValidity > currentGeneration && currentGeneration > threshold_generation) {
-                    generationOfFullValidity = currentGeneration;
-                }
-            }
             delete individuals[ sacrificeID ];
             individuals[ sacrificeID ] = new Chromosome(sacrifice);
         }
         else if(sacrifice->getFitness( ) > individuals[ weakestIndividualID ]->getFitness( )) {
             generationLoop = 0;
             //Only optimize if the sacrifice is valid.
-            if(sacrifice->isValid( )) {
-                sacrifice->optimize(sectionProf, sectionTimeslot, &h, sectionCredit, profSection, sectionPref, profPref, timeslot_count, incompatibleSectionsMatrix, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
-                if(allValid(currentGeneration) && generationOfFullValidity > currentGeneration && currentGeneration > threshold_generation) {
-                    generationOfFullValidity = currentGeneration;
-                }
-            }
-
             if(DEBUG_EVOLVE) {
                 debug << "Replacing " << weakestIndividualID << " with the sacrifice." << endl;
                 debug << "Original\t\tNew" << endl;
@@ -991,6 +978,9 @@ void Population::Evolve( ) {
                     }
                 }
             }
+        }
+        if(allValid(currentGeneration) && generationOfFullValidity > currentGeneration && currentGeneration > threshold_generation) {
+            generationOfFullValidity = currentGeneration;
         }
 
         if(DEBUG_EVOLVE) {
@@ -1132,7 +1122,7 @@ void Population::PrintEnd( ) {
             if(individuals[ i ]->equals(individuals[ j ])) {
                 unique = false;
                 cout << "DEMO DUPLICATE: " << i << " and " << j << endl;
-                debug_i.open(to_string(i) + ".txt", ofstream::out| ofstream::app);
+                debug_i.open(to_string(i) + ".txt", ofstream::out | ofstream::app);
                 debug_i << i << endl;
                 debug_i << individuals[ i ]->printTuple( ) << endl;
                 debug_i.close( );

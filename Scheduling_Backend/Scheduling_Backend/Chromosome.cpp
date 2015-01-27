@@ -229,18 +229,14 @@ string Chromosome::printTuple( ) {
 }
 
 
-//void Chromosome::evolve(int * const sortedSectionList, int ** const sectionProf, int ** const creditTimeSlot, double * const timeCredits, double * const timeCredLegend, Helper * const h, double const mutation_probability, double * const sectionCredit, bool ** const incompatibleSectionsMatrix, int timeslot_count, bool ** const timeslotConflict, int credit_count, int ** const profSection, int *** const associatedProfessors, int ** const sectionPref, int ** const profPref, bool ** const timeslotDaytime, bool ** const timeslotConsecutive, bool ** const timeslotSpread) {
-//    mutate(sortedSectionList, sectionProf, creditTimeSlot, timeCredits, timeCredLegend, credit_count, h, mutation_probability, sectionCredit);
-//    repair(sortedSectionList, incompatibleSectionsMatrix, timeslot_count, timeslotConflict, sectionCredit, credit_count, timeCredLegend, creditTimeSlot, sectionProf, profSection, associatedProfessors);
-//    updateFitness(incompatibleSectionsMatrix, sectionPref, profPref, timeslot_count, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
-//}
 void Chromosome::evolve(int * const sortedSectionList, int ** const sectionProf, int ** const sectionTimeslot, Helper * const h, double const mutation_probability, double * const sectionCredit, bool ** const incompatibleSectionsMatrix, int timeslot_count, bool ** const timeslotConflict, int credit_count, int ** const profSection, int *** const associatedProfessors, int ** const sectionPref, int ** const profPref, bool ** const timeslotDaytime, bool ** const timeslotConsecutive, bool ** const timeslotSpread){
     mutate(sortedSectionList, sectionProf, sectionTimeslot, h, mutation_probability, sectionCredit);
     repair(sortedSectionList, incompatibleSectionsMatrix, timeslot_count, timeslotConflict, sectionCredit, sectionTimeslot, sectionProf, profSection, associatedProfessors);
     updateFitness(incompatibleSectionsMatrix, sectionPref, profPref, timeslot_count, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
+    if(isValid( ))
+        optimize(sectionProf, sectionTimeslot, h, sectionCredit, profSection, sectionPref, profPref, timeslot_count, incompatibleSectionsMatrix, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
 }
 
-//void Chromosome::mutate(int * sortedSectionList, int ** sectionProf, int ** creditTimeSlot, double * timeCredits, double * timeCredLegend, int timeCredLegendSize, Helper * h, double mutation_probability, double * sectionCredit) {
 void Chromosome::mutate(int * sortedSectionList, int ** sectionProf, int ** sectionTimeslot, Helper * h, double mutation_probability, double * sectionCredit) {
 
     if(DEBUG_MUTATION)
