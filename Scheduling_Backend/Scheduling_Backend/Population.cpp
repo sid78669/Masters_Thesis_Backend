@@ -892,11 +892,10 @@ void Population::Evolve() {
     int len = to_string(generation_count).length();
 
     int generationOfFullValidity = generation_count + 1;
-    int generationLoop = 0;
-    int dots = 0;
+        int dots = 0;
 
     
-    for (currentGeneration = 0; currentGeneration <= generation_count /*&& generationLoop < replacement_wait*/; ++currentGeneration) {
+    for (currentGeneration = 0; currentGeneration <= generation_count; ++currentGeneration) {
         
         if (currentGeneration == 0) {
             cout << setw(len) << "0";
@@ -935,18 +934,15 @@ void Population::Evolve() {
         child->evolve(sortedSectionList, sectionProf, sectionTimeslot, &h, mutation_probability, sectionCredit, incompatibleSectionsMatrix, timeslotConflict, credit_count, profSection, associatedProfessors, sectionPref, profPref, timeslotDaytime, timeslotConsecutive, timeslotSpread);
         int diffCount = child->DifferenceCount(individuals[parentID]);
         if (currentGeneration > threshold_generation && !child->isValid()) {
-            generationLoop++;
             currentGeneration--;
             delete child;
             continue;
         }
         if (child->getFitness() > individuals[parentID]->getFitness()) {
-            generationLoop = 0;
             delete individuals[parentID];
             individuals[parentID] = new Chromosome(child);
         }
         else if (child->getFitness() > individuals[weakestIndividualID]->getFitness()) {
-            generationLoop = 0;
             //Only optimize if the sacrifice is valid.
             if (DEBUG_EVOLVE) {
                 debug << "Replacing " << weakestIndividualID << " with the sacrifice." << endl;
@@ -1009,7 +1005,7 @@ void Population::Evolve() {
 
         if (currentGeneration > 0) {
             statFile << currentGeneration << ",";
-            statFile << GetFitnessData();
+            statFile << GetFitnessData() << endl;
             debug << currentGeneration << ",\t" << diffCount << ",\t" << (diffCount*1.0 / (section_count*2.0));
             if (child->isValid()) {
                 debug << ", 1" << endl;
@@ -1020,6 +1016,7 @@ void Population::Evolve() {
         }
         delete child;
     }
+    cout << endl << "Ending Generation: " << currentGeneration;
     cout << endl << "Evolution Complete." << endl;
     statFile << currentGeneration << ",";
     statFile << GetFitnessData() << endl;
@@ -1055,7 +1052,7 @@ string Population::GetFitnessData() {
     double mean = Utility::CalculateMean(allFitness, population_size - 1);
     double sd = Utility::StandardDeviation(allFitness, population_size - 1, mean);
     s << mean << "," << sd;
-    s << "\n";
+    //s << ",\n";
     return s.str();
 }
 
