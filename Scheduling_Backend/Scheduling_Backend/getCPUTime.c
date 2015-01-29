@@ -4,6 +4,8 @@
  * License: Creative Commons Attribution 3.0 Unported License
  *          http://creativecommons.org/licenses/by/3.0/deed.en_US
  */
+#ifndef GETCPUTIME_C
+#define GETCPUTIME_C
 
 #if defined(_WIN32)
 #include <Windows.h>
@@ -102,3 +104,4 @@ double getCPUTime( )
 
 	return -1.0;		/* Failed. */
 }
+#endif
