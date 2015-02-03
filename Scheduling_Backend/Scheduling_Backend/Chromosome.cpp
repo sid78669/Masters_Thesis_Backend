@@ -253,7 +253,7 @@ string Chromosome::printTuple() {
 }
 
 
-void Chromosome::evolve(int * const sortedSectionList, int ** const sectionProf, int ** const sectionTimeslot, Helper * const h, double const mutation_probability, double * const sectionCredit, bool ** const incompatibleSectionsMatrix, bool ** const timeslotConflict, int credit_count, int ** const profSection, int *** const associatedProfessors, int ** const sectionPref, int ** const profPref, bool ** const timeslotDaytime, bool ** const timeslotConsecutive, bool ** const timeslotSpread) {
+void Chromosome::evolve(int * const sortedSectionList, int ** const sectionProf, int ** const sectionTimeslot, Helper * const h, int const mutation_probability, double * const sectionCredit, bool ** const incompatibleSectionsMatrix, bool ** const timeslotConflict, int credit_count, int ** const profSection, int *** const associatedProfessors, int ** const sectionPref, int ** const profPref, bool ** const timeslotDaytime, bool ** const timeslotConsecutive, bool ** const timeslotSpread) {
     updateTabooList(incompatibleSectionsMatrix);
     mutate(incompatibleSectionsMatrix, sortedSectionList, sectionProf, sectionTimeslot, h, mutation_probability, sectionCredit);
     repair(sortedSectionList, incompatibleSectionsMatrix, timeslotConflict, sectionCredit, sectionTimeslot, sectionProf, profSection, associatedProfessors);
@@ -262,7 +262,7 @@ void Chromosome::evolve(int * const sortedSectionList, int ** const sectionProf,
         optimize(sectionProf, sectionTimeslot, h, sectionCredit, profSection, sectionPref, profPref, incompatibleSectionsMatrix, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
 }
 
-void Chromosome::mutate(bool ** incompatibleSectionsMatrix, int * sortedSectionList, int ** sectionProf, int ** sectionTimeslot, Helper * h, double mutation_probability, double * sectionCredit) {
+void Chromosome::mutate(bool ** incompatibleSectionsMatrix, int * sortedSectionList, int ** sectionProf, int ** sectionTimeslot, Helper * h, int mutation_probability, double * sectionCredit) {
 
     if (DEBUG_MUTATION)
         cout << "Mutating Individual... " << endl;
@@ -278,11 +278,11 @@ void Chromosome::mutate(bool ** incompatibleSectionsMatrix, int * sortedSectionL
         timeID = getTime(g);
 
         int mutationTime = h->randNum(1, 100);
-        if (mutationTime <= (int)(mutation_probability * 100)) {
+        if (mutationTime <= mutation_probability) {
             if (compTimes != 1) {
 
                 timeID = h->randNum(1, compTimes);
-                for (timeID = 1; timeID < compTimes && sectionTabooList[idx][sectionTimeslot[idx][timeID]]; ++ timeID);
+                for (timeID = 1; timeID < compTimes && sectionTabooList[idx][sectionTimeslot[idx][timeID]]; ++timeID);
             }
             else
                 timeID = 1;
@@ -291,7 +291,7 @@ void Chromosome::mutate(bool ** incompatibleSectionsMatrix, int * sortedSectionL
         }
 
         int mutationProf = h->randNum(1, 100);
-        if (mutationProf <= (int)(mutation_probability * 100)) {
+        if (mutationProf <= mutation_probability) {
             if (compProfs != 1) {
                 profID = h->randNum(1, compProfs);
                 if (profID != getProf(g))

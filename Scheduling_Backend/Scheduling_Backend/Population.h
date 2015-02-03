@@ -72,12 +72,11 @@ private:
     int generation_count;
     int population_size;
     int replacement_wait;
-    double mutation_probability; 
+    int mutation_probability; 
     int section_count;
     int professor_count;
     int timeslot_count;
     int credit_count;
-    int max_fitness;
     
     //Predetermined variable
     const int REPAIR_TRIES;
@@ -142,10 +141,8 @@ private:
     
     void prepareDataStatistics( ); //Prepare data statistics about input
     int getWeightedRandomIndividual( ); //Get weighted random individual
-    string PrintTableFormat( );
     string GetFitnessData( ); //Get a string showing the fitness data of the population
     bool allValid( ); //Check if all individuals are valid
-    bool allValid(int currentGeneration );
 };
 
 #endif

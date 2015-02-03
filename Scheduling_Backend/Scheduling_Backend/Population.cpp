@@ -388,7 +388,7 @@ void Population::readParameters(ifstream &inFile) {
         replacement_wait = stoi(currLine);
 
         getline(inFile, currLine);
-        mutation_probability = stod(currLine) / 100.0;
+        mutation_probability = stoi(currLine);
 
         getline(inFile, currLine);
         section_count = stoi(currLine);
@@ -402,8 +402,6 @@ void Population::readParameters(ifstream &inFile) {
         getline(inFile, currLine);
         credit_count = stoi(currLine);
 
-        getline(inFile, currLine);
-        max_fitness = stoi(currLine);
         getline(inFile, currLine);
     }
 }
@@ -726,7 +724,6 @@ void Population::readInitialSchedule(ifstream &inFile) {
             int geneLocation = stoi(tokenizedVersion.at(0));
             Gene current(stoi(tokenizedVersion.at(1)), stoi(tokenizedVersion.at(2)));
             individuals[0]->setGene(geneLocation, current);
-            //individuals[ 0 ]->setProf(geneLocation, stoi(tokenizedVersion.at(1)), sectionCredit[ geneLocation ]);
         }
         individuals[0]->updateProfLoad(sectionCredit);
         if (DEBUG_INIT)
@@ -746,8 +743,8 @@ void Population::readInitialSchedule(ifstream &inFile) {
 
 void Population::initPopulationFromFirst() {
     cout << "Initiating generation of population...." << endl;
-    double original_mutation_probability = mutation_probability;
-    mutation_probability = 0.1;
+    int original_mutation_probability = mutation_probability;
+    mutation_probability = 10;
     int len = to_string(population_size).length();
     cout << "Generating individual : ";
 
@@ -835,33 +832,34 @@ void Population::readProfPref(ifstream &inFile) {
 } //end readProfPref
 
 int Population::getWeightedRandomIndividual() {
-    int minWeight = max_fitness;
-    int maxWeight = 0;
-    for (int i = 0; i < population_size; i++) {
-        maxWeight += individuals[i]->getFitness();
-        if (maxWeight > (int)pow(2, 30))
-        {
-            maxWeight = -1;
-            break;
-        }
-        if (individuals[i]->getFitness() < minWeight) {
+    int minWeight = INT32_MAX;
+    int maxWeight = INT32_MIN;
+    for (int i = 0; i < population_size; ++i) {
+        if (individuals[i]->getFitness() > maxWeight)
+            maxWeight = individuals[i]->getFitness();
+        if (individuals[i]->getFitness() < minWeight)
             minWeight = individuals[i]->getFitness();
-        }
     }
 
-    if (maxWeight > 0) {
-        int randomWeight = h.randNum(minWeight, maxWeight);
-        int sacrifice = 0;
-        for (sacrifice = 0; sacrifice < population_size; ++sacrifice) {
-            maxWeight -= individuals[sacrifice]->getFitness();
-            if (maxWeight <= 0)
-                break;
-        }
-        return sacrifice;
+    int * scaledFitness = new int[population_size];
+    int scale = (maxWeight - minWeight) / 3;
+    int scaledMax = 0;
+    for (int i = 0; i < population_size; ++i) {
+        scaledFitness[i] = (individuals[i]->getFitness() - minWeight) + scale;
+        scaledMax += scaledFitness[i];
     }
-    else {
-        return h.randNum(0, population_size - 1);
+    debug << endl;
+    int scaledMin = scale;
+    int randomWeight = h.randNum(scaledMin, scaledMax);
+    int rtnVal = 0;
+    for (; rtnVal < population_size && randomWeight > 0; ++rtnVal) {
+        randomWeight -= scaledFitness[rtnVal];
     }
+    delete[] scaledFitness;
+    if (rtnVal < 0 || rtnVal >= population_size) {
+        rtnVal = h.randNum(0, population_size - 1);
+    }
+    return rtnVal;
 } //end getWeightedRandomIndividual
 
 bool Population::allValid() {
@@ -873,53 +871,33 @@ bool Population::allValid() {
     return true;
 } //end allValid
 
-bool Population::allValid(int currentGeneration) {
-    bool val = allValid();
-    /*if(val) {
-        cout << "Valid population at " << currentGeneration << endl;
-    }*/
-
-    return val;
-} //end allValid(int currentGeneration)
-
 void Population::Evolve() {
-
+    stringstream invalidCountSS;
     int currentGeneration = 1;
     int threshold_generation = (int)((double)generation_count * 0.25);
     cout << "Total generations to evolve over: " << generation_count << endl;
     cout << "Threshold for invalid individuals " << threshold_generation << endl;
     cout << "Current Generation: ";
     int len = to_string(generation_count).length();
-
+    bool validityConfirmed = false;
     int generationOfFullValidity = generation_count + 1;
-        int dots = 0;
-
-    
+    int reduceMutationInterval = generation_count / mutation_probability;
+    debug << "Reduce probability every " << reduceMutationInterval << endl;
     for (currentGeneration = 0; currentGeneration <= generation_count; ++currentGeneration) {
-        
+        if (currentGeneration > 0 && currentGeneration % reduceMutationInterval == 0 && mutation_probability > 1)
+            mutation_probability--;
         if (currentGeneration == 0) {
             cout << setw(len) << "0";
         }
-        else if (currentGeneration % 100 == 0 || currentGeneration < 100) {
-            for (int b = 0; b < (len + dots); ++b) {
+        else /*if (currentGeneration % 100 == 0 || currentGeneration < 100)*/ {
+            for (int b = 0; b < (len /*+ dots*/); ++b) {
                 cout << '\b';
             }
             cout << setw(len) << to_string(currentGeneration);
-            if (dots > 0) {
-                cout << setw(dots) << " ";
-                for (int b = 0; b < dots; ++b) {
-                    cout << '\b';
-                }
-            }
-            dots = 0;
-        }
-        else if (currentGeneration % 10 == 0) {
-            cout << '.';
-            dots++;
         }
 
-        int parentID;// = getWeightedRandomIndividual( );
-        parentID = h.randNum(0, population_size - 1);
+
+        int parentID = getWeightedRandomIndividual();
         if (individuals[parentID]->getFitness() < lowestFitnessSeen)
             lowestFitnessSeen = individuals[parentID]->getFitness();
         if (individuals[parentID]->getFitness() > highestFitnessSeen)
@@ -938,6 +916,8 @@ void Population::Evolve() {
             delete child;
             continue;
         }
+        if (!validityConfirmed)
+            validityConfirmed = allValid();
         if (child->getFitness() > individuals[parentID]->getFitness()) {
             delete individuals[parentID];
             individuals[parentID] = new Chromosome(child);
@@ -958,9 +938,9 @@ void Population::Evolve() {
 
             if (DEBUG_EVOLVE)
                 debug << individuals[weakestIndividualID]->print();
-            bool valid_population = allValid();
             //If we are past the threshold generation, we want to start creating a valid population.
-            if (currentGeneration > threshold_generation && !valid_population) {
+            if (currentGeneration > threshold_generation && !validityConfirmed) {
+                
                 int weakestInvalid = -1;
                 int lowestFitness = lowestFitnessSeen;
                 for (int j = 0; j < population_size; ++j) {
@@ -989,9 +969,17 @@ void Population::Evolve() {
                 }
             }
         }
-        if (allValid(currentGeneration) && generationOfFullValidity > currentGeneration && currentGeneration > threshold_generation) {
+
+        if (validityConfirmed && generationOfFullValidity > currentGeneration && currentGeneration > threshold_generation) {
             generationOfFullValidity = currentGeneration;
         }
+
+        int invalidCount = 0;
+        for (int i = 0; i < population_size; ++i) {
+            if (!individuals[i]->isValid())
+                invalidCount++;
+        }
+        invalidCountSS << currentGeneration << "," << invalidCount << "\n";
 
         if (DEBUG_EVOLVE) {
             debug << "Current State" << endl;
@@ -1001,7 +989,6 @@ void Population::Evolve() {
             }
             debug << "-----------------------------------------------------------" << endl;
         }
-        
 
         if (currentGeneration > 0) {
             statFile << currentGeneration << ",";
@@ -1016,6 +1003,9 @@ void Population::Evolve() {
         }
         delete child;
     }
+    debug << "Invalid Count Data: " << endl;
+    debug << invalidCountSS.str() << endl;
+    debug << "-----------------" << endl << endl;
     cout << endl << "Ending Generation: " << currentGeneration;
     cout << endl << "Evolution Complete." << endl;
     statFile << currentGeneration << ",";
@@ -1023,31 +1013,12 @@ void Population::Evolve() {
     statFile << "Population valid at: " << generationOfFullValidity << endl;
 }
 
-string Population::PrintTableFormat() {
-    string rtnVal = "";
-
-    if (DEBUG_PRINTTABLE) {
-        for (int i = 0; i < 1; ++i) {
-            //rtnVal += individuals[ i ]->printTable(timeSlots, timeslot_count, sectionCredit);
-            rtnVal += "\n\n";
-        }
-    }
-    else {
-        for (int i = 0; i < population_size; ++i) {
-            // rtnVal += individuals[ i ]->printTable(timeSlots, timeslot_count);
-            rtnVal += "\n\n";
-        }
-    }
-
-    return rtnVal;
-}
-
 string Population::GetFitnessData() {
     int * allFitness = new int[population_size - 2];
     stringstream s;
     for (int i = 0; i < population_size; ++i) {
         allFitness[i - 1] = individuals[i]->getFitness();
-        s << individuals[ i ]->getFitness( ) << ",";
+        s << individuals[i]->getFitness() << ",";
     }
     double mean = Utility::CalculateMean(allFitness, population_size - 1);
     double sd = Utility::StandardDeviation(allFitness, population_size - 1, mean);
