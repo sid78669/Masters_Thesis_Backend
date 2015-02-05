@@ -28,55 +28,71 @@
 
 #include "Chromosome.h"
 
-Chromosome::Chromosome(int geneLength, int profCount, int timeslotCount, double * profCredsMax) : gene_length(geneLength), prof_count(profCount), timeslot_count(timeslotCount) {
+ /// <summary>
+/// Initializes a new instance of the <see cref="Chromosome"/> class.
+/// </summary>
+/// <param name="sectionCount">Number fo sections.</param>
+/// <param name="profCount">The prof count.</param>
+/// <param name="timeslotCount">The timeslot count.</param>
+/// <param name="profCredsMax">The prof creds maximum.</param>
+/// <param name="section_credit">The section_credit.</param>
+Chromosome::Chromosome(int sectionCount, int profCount, int timeslotCount, double * profCredsMax, double * section_credit) : section_count(sectionCount), prof_count(profCount), timeslot_count(timeslotCount), sectionCredit(section_credit) {
     fitness = 0;
     valid = false;
-    genes = new Gene*[geneLength];
-    sectionTabooList = new bool *[gene_length];
-    for (int i = 0; i < gene_length; ++i) {
-        genes[i] = NULL;
+    sections = new Gene*[sectionCount];
+    sectionTabooList = new bool *[section_count];
+    for (int i = 0; i < section_count; ++i) {
+        sections[i] = NULL;
         sectionTabooList[i] = new bool[timeslotCount]();
     }
 
     professorCredits = new double[profCount];
-    professorCreditsInitial = new double[profCount];
+    professorCreditsInitial = profCredsMax;
     for (int i = 0; i < profCount; i++) {
         professorCredits[i] = profCredsMax[i];
-        professorCreditsInitial[i] = profCredsMax[i];
     }
 }
 
-Chromosome::Chromosome(const Chromosome * other) :
-    gene_length(other->gene_length), prof_count(other->prof_count), timeslot_count(other->timeslot_count) {
-    valid = other->valid;
-    genes = new Gene*[gene_length];
-    professorCredits = new double[other->prof_count];
-    professorCreditsInitial = new double[other->prof_count];
-    sectionTabooList = new bool*[gene_length];
-    fitness = other->fitness;
-    for (int i = 0; i < gene_length; i++) {
-        genes[i] = new Gene(other->genes[i]->getProfID(), other->genes[i]->getTimeID());
+/// <summary>
+/// Initializes a new instance of the <see cref="Chromosome"/> class.
+/// </summary>
+/// <param name="source">The source chromosome.</param>
+Chromosome::Chromosome(Chromosome * source) :
+    section_count(source->section_count), prof_count(source->prof_count), timeslot_count(source->timeslot_count) {
+    sectionCredit = source->sectionCredit;
+    valid = source->valid;
+    sections = new Gene*[section_count];
+    professorCredits = new double[source->prof_count];
+    professorCreditsInitial = source->professorCreditsInitial;
+    sectionTabooList = new bool*[section_count];
+    fitness = source->fitness;
+    for (int i = 0; i < section_count; i++) {
+        sections[i] = new Gene(source->getProf(i), source->getTime(i));
         sectionTabooList[i] = new bool[timeslot_count];
         for (int j = 0; j < timeslot_count; ++j) {
-            sectionTabooList[i][j] = other->sectionTabooList[i][j];
+            sectionTabooList[i][j] = source->sectionTabooList[i][j];
         }
     }
 
-    for (int i = 0; i < other->prof_count; i++) {
-        professorCredits[i] = other->professorCredits[i];
-        professorCreditsInitial[i] = other->professorCreditsInitial[i];
+    for (int i = 0; i < source->prof_count; i++) {
+        professorCredits[i] = source->professorCredits[i];
     }
 }
 
-Chromosome::Chromosome(const Chromosome &source) :
-    gene_length(source.gene_length), prof_count(source.prof_count), timeslot_count(source.timeslot_count) {
+/// <summary>
+/// Initializes a new instance of the <see cref="Chromosome"/> class.
+/// </summary>
+/// <param name="source">The source chromosome.</param>
+Chromosome::Chromosome(Chromosome &source) :
+    section_count(source.section_count), prof_count(source.prof_count), timeslot_count(source.timeslot_count) {
     valid = source.valid;
-    genes = new Gene*[gene_length];
-    sectionTabooList = new bool *[gene_length];
+    sectionCredit = source.sectionCredit;
+    sections = new Gene*[section_count];
+    sectionTabooList = new bool *[section_count];
 
     fitness = source.fitness;
-    for (int i = 0; i < gene_length; i++) {
-        genes[i] = new Gene(source.genes[i]->getProfID(), source.genes[i]->getTimeID());
+    for (int i = 0; i < section_count; i++) {
+        sections[i] = new Gene(source.getProf(i), source.getTime(i));
         sectionTabooList[i] = new bool[timeslot_count];
         for (int j = 0; j < timeslot_count; ++j) {
             sectionTabooList[i][j] = source.sectionTabooList[i][j];
@@ -84,33 +100,45 @@ Chromosome::Chromosome(const Chromosome &source) :
     }
 
     professorCredits = new double[source.prof_count];
-    professorCreditsInitial = new double[source.prof_count];
+    professorCreditsInitial = source.professorCreditsInitial;
     for (int i = 0; i < source.prof_count; i++) {
         professorCredits[i] = source.professorCredits[i];
-        professorCreditsInitial[i] = source.professorCreditsInitial[i];
     }
 }
 
+/// <summary>
+/// Updates the taboo list.
+/// </summary>
+/// <param name="incompatibleSectionsMatrix">The incompatible sections matrix.</param>
 void Chromosome::updateTabooList(bool ** incompatibleSectionsMatrix) {
-    for (int i = 0; i < gene_length; ++i)
-        for (int j = 0; j < timeslot_count; ++j) {
-            sectionTabooList[i][j] = false;
-        }
+    for (int i = 0; i < section_count; ++i) {
+        delete[] sectionTabooList[i];
+        sectionTabooList[i] = new bool[timeslot_count]();
+    }
 
-    for (int first = 0; first < gene_length - 1; ++first) {
-        for (int second = first + 1; second < gene_length; ++second) {
-            if (incompatibleSectionsMatrix[first][second] || genes[first]->getProfID() == genes[second]->getProfID()) {
-                sectionTabooList[first][genes[second]->getTimeID()] = true;
-                sectionTabooList[second][genes[first]->getTimeID()] = true;
+    for (int first = 0; first < section_count - 1; ++first) {
+        for (int second = first + 1; second < section_count; ++second) {
+            if (incompatibleSectionsMatrix[first][second] || getProf(first) == getProf(second)) {
+                sectionTabooList[first][getTime(second)] = true;
+                sectionTabooList[second][getTime(first)] = true;
             }
         }
     }
 }
 
+/// <summary>
+/// Gets the course load for the requested professor.
+/// </summary>
+/// <param name="profID">The prof identifier.</param>
+/// <returns><c>Double</c> value of the requested professor's course load.</returns>
 double Chromosome::getCourseLoad(int profID) {
     return professorCredits[profID];
 }
 
+/// <summary>
+/// Gets the professor loads.
+/// </summary>
+/// <returns><c>String</c></returns>
 string Chromosome::getProfessorLoads() {
     std::ostringstream ss;
     for (int i = 0; i < prof_count; i++) {
@@ -120,117 +148,173 @@ string Chromosome::getProfessorLoads() {
     return ss.str();
 }
 
-Chromosome& Chromosome::operator=(const Chromosome &source) {
-    genes = new Gene*[gene_length];
-    fitness = source.fitness;
-    for (int i = 0; i < gene_length; i++) {
-        genes[i] = new Gene(source.genes[i]->getProfID(),
-            source.genes[i]->getTimeID());
-    }
-
-    for (int i = 0; i < source.prof_count; i++) {
-        professorCredits[i] = source.professorCredits[i];
-    }
-
-    if (DEBUG_ASSIGNMENT) {
-        cout << "source\t\tcurrent" << endl;
-        for (int i = 0; i < gene_length; i++) {
-            cout << source.genes[i] << "\t\t\t" << this->genes[i] << endl;
-        }
-    }
-    return *this;
-}
-
+/// <summary>
+/// Finalizes an instance of the <see cref="Chromosome"/> class.
+/// </summary>
 Chromosome::~Chromosome() {
-    if (genes) {
-        for (int i = 0; i < gene_length; ++i) {
-            delete genes[i];
+    if (sectionTabooList) {
+        for (int i = 0; i < section_count; ++i) {
+            delete[] sectionTabooList[i];
         }
-        delete[] genes;
+        delete[] sectionTabooList;
+    }
+    if (sections) {
+        for (int i = 0; i < section_count; ++i) {
+            delete sections[i];
+        }
+        delete[] sections;
     }
     if (professorCredits)
         delete[] professorCredits;
 }
 
+/// <summary>
+/// Determines whether this instance is valid.
+/// </summary>
+/// <returns><c>True</c> is the chromosome is valid, <c>false</c> otherwise.</returns>
 bool Chromosome::isValid() {
     return valid;
 }
 
+/// <summary>
+/// Determines whether the specified incompatible sections matrix is valid.
+/// </summary>
+/// <param name="incompatibleSectionsMatrix">The incompatible sections matrix.</param>
+/// <param name="timeslotConflict">The timeslot conflict.</param>
+/// <param name="verbose">if set to <c>true</c>, print all invalidities.</param>
+/// <returns><c>True</c> is the chromosome is valid, <c>false</c> otherwise.</returns>
 bool Chromosome::isValid(bool ** incompatibleSectionsMatrix, bool ** timeslotConflict, bool verbose) {
     validate(incompatibleSectionsMatrix, timeslotConflict, verbose);
     return valid;
 }
 
+/// <summary>
+/// Assist sort function by sorting by professor credit.
+/// </summary>
+/// <param name="i"></param>
+/// <param name="j"></param>
+/// <returns>result of comparison <code>professorCredits[i] &lt; professorCredits[j] </code>.</returns>
 bool Chromosome::sortByProfessorCredit(int i, int j) {
     return professorCredits[i] < professorCredits[j];
 }
 
-bool Chromosome::equals(const Chromosome * other)
-{
+/// <summary>
+/// Check if the current chromosome is equal to the other chromosome.
+/// </summary>
+/// <param name="other">The chromosome to compare with.</param>
+/// <returns><c>True</c> if the two chromosomes are equal, <c>false</c> otherwise.</returns>
+bool Chromosome::equals(Chromosome * other) {
     if (fitness != other->fitness)
         return false;
-    for (int i = 0; i < gene_length; ++i) {
-        if (genes[i]->getProfID() != other->genes[i]->getProfID() || genes[i]->getTimeID() != other->genes[i]->getTimeID())
+    for (int i = 0; i < section_count; ++i) {
+        if (getProf(i) != other->getProf(i) || getTime(i) != other->getTime(i))
             return false;
     }
     return true;
 }
 
-void Chromosome::setTime(int geneID, int newTime) {
-    if (genes[geneID]) {
-        genes[geneID]->setTimeID(newTime);
+/// <summary>
+/// Sets the time for the given section
+/// </summary>
+/// <param name="sectionID">The section identifier.</param>
+/// <param name="newTime">The new time.</param>
+void Chromosome::setTime(int sectionID, int newTime) {
+    if (sections[sectionID]) {
+        sections[sectionID]->setTimeID(newTime);
     }
     else {
-        genes[geneID] = new Gene(-1, newTime);
+        sections[sectionID] = new Gene(-1, newTime);
     }
 }
 
-void Chromosome::setProf(int geneID, int newProf, double courseCred) {
-    if (genes[geneID]) {
-        genes[geneID]->setProfID(newProf);
+/// <summary>
+/// Sets the professor for the given section
+/// </summary>
+/// <param name="sectionID">The section identifier.</param>
+/// <param name="newProf">The new prof.</param>
+void Chromosome::setProf(int sectionID, int newProf) {
+    if (sections[sectionID]) {
+        professorCredits[getProf(sectionID)] += sectionCredit[sectionID];
+        sections[sectionID]->setProfID(newProf);
     }
     else {
-        genes[geneID] = new Gene(newProf, -1);
+        sections[sectionID] = new Gene(newProf, -1);
     }
-
+    professorCredits[newProf] -= sectionCredit[sectionID];
 }
 
-void Chromosome::setGene(int geneID, Gene newGene) {
-    if (genes[geneID])
-        delete genes[geneID];
-    genes[geneID] = new Gene(newGene);
+/// <summary>
+/// Sets the gene for the given section.
+/// </summary>
+/// <param name="sectionID">The section identifier.</param>
+/// <param name="newGene">The new gene.</param>
+void Chromosome::setGene(int sectionID, Gene newGene) {
+    if (sections[sectionID]) {
+        professorCredits[getProf(sectionID)] += sectionCredit[sectionID];
+        delete sections[sectionID];
+    }
+    sections[sectionID] = new Gene(newGene);
+    professorCredits[getProf(sectionID)] -= sectionCredit[sectionID];
 }
 
-const int Chromosome::getTime(int geneID) {
-    return genes[geneID]->getTimeID();
+/// <summary>
+/// Gets the time for the given section.
+/// </summary>
+/// <param name="sectionID">The section identifier.</param>
+/// <returns><c>Integer</c> value of the timeslot ID.</returns>
+const int Chromosome::getTime(int sectionID) {
+    return sections[sectionID]->getTimeID();
 }
 
-const int Chromosome::getProf(int geneID) {
-    return genes[geneID]->getProfID();
+/// <summary>
+/// Gets the professor for the given section.
+/// </summary>
+/// <param name="sectionID">The section identifier.</param>
+/// <returns><c>Integer</c> value of the professor ID.</returns>
+const int Chromosome::getProf(int sectionID) {
+    return sections[sectionID]->getProfID();
 }
 
-Gene* Chromosome::getGene(int geneID) {
-    return genes[geneID];
+/// <summary>
+/// Gets the gene for the given section.
+/// </summary>
+/// <param name="sectionID">The section identifier.</param>
+/// <returns>A pointer to the <see cref="Gene"/> object for the section.</returns>
+Gene* Chromosome::getGene(int sectionID) {
+    return sections[sectionID];
 }
 
+/// <summary>
+/// Gets the fitness.
+/// </summary>
+/// <returns><c>Integer</c> value of the fitness.</returns>
 int Chromosome::getFitness() {
     return fitness;
 }
 
+/// <summary>
+/// Validate the professor load for the given professor
+/// </summary>
+/// <param name="p">The professor ID to validate</param>
+/// <returns><c>True</c> if the professor credits are within the valid range, <c>false</c> otherwise.</returns>
 bool Chromosome::validProfessorLoad(int p) {
     return (professorCredits[p] >= DELTA_MAX && professorCredits[p] <= DELTA_MIN);
 }
 
+/// <summary>
+/// Check if the professor load will be valid after subtracting the credit value;
+/// </summary>
+/// <param name="p">The professor to validate.</param>
+/// <param name="credit">The credit.</param>
+/// <returns><c>True</c> if the credits will not invalidate the professor's load, <c>false</c> otherwise.</returns>
 bool Chromosome::validProfessorLoadChange(int p, double credit) {
-    return ((professorCredits[p] - credit) >= DELTA_MAX
-        || (professorCredits[p] - credit) <= DELTA_MIN);
+    return ((professorCredits[p] - credit) >= DELTA_MAX || (professorCredits[p] - credit) <= DELTA_MIN);
 }
 
 string Chromosome::print() {
     string rtnVal;
-    for (int i = 0; i < gene_length; i++) {
-        rtnVal += to_string(i) + "> " + to_string(genes[i]->getProfID()) + ", "
-            + to_string(genes[i]->getTimeID()) + "\n";
+    for (int i = 0; i < section_count; i++) {
+        rtnVal += to_string(i) + ", " + print(i) + "\n";
     }
 
     rtnVal += "----------------------------\n";
@@ -238,36 +322,57 @@ string Chromosome::print() {
     return rtnVal;
 }
 
-string Chromosome::print(int geneID) {
-    return to_string(genes[geneID]->getProfID()) + ", "
-        + to_string(genes[geneID]->getTimeID());
+/// <summary>
+/// Prints the specified section identifier.
+/// </summary>
+/// <param name="sectionID">The section identifier.</param>
+/// <returns></returns>
+string Chromosome::print(int sectionID) {
+    return to_string(getProf(sectionID)) + ", " + to_string(getTime(sectionID));
 }
 
-string Chromosome::printTuple() {
-    stringstream rtnVal;
-    for (int i = 0; i < gene_length; ++i) {
-        rtnVal << i << "," << print(i) << endl;
-    }
-
-    return rtnVal.str();
-}
-
-
-void Chromosome::evolve(int * const sortedSectionList, int ** const sectionProf, int ** const sectionTimeslot, Helper * const h, int const mutation_probability, double * const sectionCredit, bool ** const incompatibleSectionsMatrix, bool ** const timeslotConflict, int credit_count, int ** const profSection, int *** const associatedProfessors, int ** const sectionPref, int ** const profPref, bool ** const timeslotDaytime, bool ** const timeslotConsecutive, bool ** const timeslotSpread) {
+/// <summary>
+/// Evolves the current chromosome.
+/// </summary>
+/// <param name="sortedSectionList">The sorted section list.</param>
+/// <param name="sectionProf">The section prof.</param>
+/// <param name="sectionTimeslot">The section timeslot.</param>
+/// <param name="h">The helper object.</param>
+/// <param name="mutation_probability">The mutation probability.</param>
+/// <param name="incompatibleSectionsMatrix">The incompatible sections matrix.</param>
+/// <param name="timeslotConflict">The timeslot conflict.</param>
+/// <param name="credit_count">The credit count.</param>
+/// <param name="profSection">The prof section.</param>
+/// <param name="associatedProfessors">The associated professors.</param>
+/// <param name="sectionPref">The section preference.</param>
+/// <param name="profPref">The prof preference.</param>
+/// <param name="timeslotDaytime">The timeslot daytime.</param>
+/// <param name="timeslotConsecutive">The timeslot consecutive.</param>
+/// <param name="timeslotSpread">The timeslot spread.</param>
+void Chromosome::evolve(int * const sortedSectionList, int ** const sectionProf, int ** const sectionTimeslot, Helper * const h, int const mutation_probability, bool ** const incompatibleSectionsMatrix, bool ** const timeslotConflict, int credit_count, int ** const profSection, int *** const associatedProfessors, int ** const sectionPref, int ** const profPref, bool ** const timeslotDaytime, bool ** const timeslotConsecutive, bool ** const timeslotSpread) {
     updateTabooList(incompatibleSectionsMatrix);
-    mutate(incompatibleSectionsMatrix, sortedSectionList, sectionProf, sectionTimeslot, h, mutation_probability, sectionCredit);
-    repair(sortedSectionList, incompatibleSectionsMatrix, timeslotConflict, sectionCredit, sectionTimeslot, sectionProf, profSection, associatedProfessors);
+    mutate(incompatibleSectionsMatrix, sortedSectionList, sectionProf, sectionTimeslot, h, mutation_probability);
+    repair(sortedSectionList, incompatibleSectionsMatrix, timeslotConflict, sectionTimeslot, sectionProf, profSection, associatedProfessors);
     updateFitness(incompatibleSectionsMatrix, sectionPref, profPref, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
     if (isValid())
-        optimize(sectionProf, sectionTimeslot, h, sectionCredit, profSection, sectionPref, profPref, incompatibleSectionsMatrix, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
+        optimize(sectionProf, sectionTimeslot, h, profSection, sectionPref, profPref, incompatibleSectionsMatrix, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
 }
 
-void Chromosome::mutate(bool ** incompatibleSectionsMatrix, int * sortedSectionList, int ** sectionProf, int ** sectionTimeslot, Helper * h, int mutation_probability, double * sectionCredit) {
+/// <summary>
+/// Mutates the current chromosome.
+/// </summary>
+/// <param name="incompatibleSectionsMatrix">The incompatible sections matrix.</param>
+/// <param name="sortedSectionList">The sorted section list.</param>
+/// <param name="sectionProf">The section prof.</param>
+/// <param name="sectionTimeslot">The section timeslot.</param>
+/// <param name="h">The helper object.</param>
+/// <param name="mutation_probability">The mutation probability.</param>
+void Chromosome::mutate(bool ** incompatibleSectionsMatrix, int * sortedSectionList, int ** sectionProf, int ** sectionTimeslot, Helper * h, int mutation_probability) {
 
     if (DEBUG_MUTATION)
         cout << "Mutating Individual... " << endl;
 
-    for (int idx = 0; idx < gene_length; idx++) {
+    for (int idx = 0; idx < section_count; idx++) {
         int g = sortedSectionList[idx];
         int timeID = -1, compTimes = -1, profID = -1, compProfs = -1;
 
@@ -280,9 +385,9 @@ void Chromosome::mutate(bool ** incompatibleSectionsMatrix, int * sortedSectionL
         int mutationTime = h->randNum(1, 100);
         if (mutationTime <= mutation_probability) {
             if (compTimes != 1) {
-
                 timeID = h->randNum(1, compTimes);
-                for (timeID = 1; timeID < compTimes && sectionTabooList[idx][sectionTimeslot[idx][timeID]]; ++timeID);
+                if (sectionTabooList[idx][sectionTimeslot[idx][timeID]])
+                    for (timeID = 1; timeID <= compTimes && sectionTabooList[idx][sectionTimeslot[idx][timeID]]; ++timeID);
             }
             else
                 timeID = 1;
@@ -295,18 +400,28 @@ void Chromosome::mutate(bool ** incompatibleSectionsMatrix, int * sortedSectionL
             if (compProfs != 1) {
                 profID = h->randNum(1, compProfs);
                 if (profID != getProf(g))
-                    setProf(g, sectionProf[g][profID], sectionCredit[g]);
+                    setProf(g, sectionProf[g][profID]);
             }
             else
                 profID = 1;
         }
     }
-    updateProfLoad(sectionCredit);
+
     if (DEBUG_MUTATION)
         cout << "Finished Mutating." << endl;
 }
 
-string Chromosome::shiftSectionToOverloaded(int target, int parentID, int profID, int ** sectionProf, int ** profSection, double * sectionCredit, int *** associatedProfessors) {
+/// <summary>
+/// Shifts the section to overloaded.
+/// </summary>
+/// <param name="target">The target.</param>
+/// <param name="parentID">The parent identifier.</param>
+/// <param name="profID">The prof identifier.</param>
+/// <param name="sectionProf">The section prof.</param>
+/// <param name="profSection">The prof section.</param>
+/// <param name="associatedProfessors">The associated professors.</param>
+/// <returns>A string containing the professor to shift and the course to shift to the professor.</returns>
+string Chromosome::shiftSectionToOverloaded(int target, int parentID, int profID, int ** sectionProf, int ** profSection, int *** associatedProfessors) {
     if (DEBUG_BALANCEPROFLOAD)
         cout << "Shift Section with parent: " << parentID << " and prof " << profID << endl;
     visitedProfessors[profID] = true;
@@ -318,11 +433,9 @@ string Chromosome::shiftSectionToOverloaded(int target, int parentID, int profID
                 break;
         }
         for (int sTeach = 2; sTeach <= associatedProfessors[parentID][profIDIndex][1] + 1; ++sTeach) {
-            if (genes[associatedProfessors[parentID][profIDIndex][sTeach]]->getProfID() == parentID) {
-                //cout << "Returning: " << associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] << endl;
+            if (getProf(associatedProfessors[parentID][profIDIndex][sTeach]) == parentID) {
                 return to_string(associatedProfessors[parentID][profIDIndex][sTeach]) + "," + to_string(associatedProfessors[parentID][profIDIndex][0]);
             }
-            //cout << genes[ associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] ]->getProfID( ) << " is teaching " << associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] << endl;
         }
         if (DEBUG_BALANCEPROFLOAD)
             cout << "Unable to find a shared section between " << parentID << " and prof " << profID << endl;
@@ -338,18 +451,17 @@ string Chromosome::shiftSectionToOverloaded(int target, int parentID, int profID
             continue;
         bool good = false;
         for (int x = 2; x <= associatedProfessors[profID][associateIndex][1] + 1 && !good; ++x) {
-            if (genes[associatedProfessors[profID][associateIndex][x]]->getProfID() == profID)
+            if (getProf(associatedProfessors[profID][associateIndex][x]) == profID)
                 good = true;
         }
         if (!good)
             continue;
-        string sectionToTransfer = shiftSectionToOverloaded(target, profID, associatedProfessors[profID][associateIndex][0], sectionProf, profSection, sectionCredit, associatedProfessors);
+        string sectionToTransfer = shiftSectionToOverloaded(target, profID, associatedProfessors[profID][associateIndex][0], sectionProf, profSection, associatedProfessors);
         if (!sectionToTransfer.empty()) {
             vector<string> data = Utility::Tokenize(sectionToTransfer, ',');
             int newProf = stoi(data.at(1));
             int section = stoi(data.at(0));
-            genes[section]->setProfID(newProf);
-            updateProfLoad(sectionCredit);
+            setProf(section, newProf);
             if (professorCredits[newProf] > 0)
                 visitedProfessors[newProf] = false;
             int profIDIndex = 1;
@@ -358,19 +470,26 @@ string Chromosome::shiftSectionToOverloaded(int target, int parentID, int profID
                     break;
             }
             for (int sTeach = 2; sTeach <= associatedProfessors[parentID][profIDIndex][1] + 1; ++sTeach) {
-                if (genes[associatedProfessors[parentID][profIDIndex][sTeach]]->getProfID() == parentID) {
-                    //cout << "Returning: " << associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] << endl;
-                    //return associatedProfessors[ parentID ][ profIDIndex ][ sTeach ];
+                if (getProf(associatedProfessors[parentID][profIDIndex][sTeach]) == parentID) {
                     return to_string(associatedProfessors[parentID][profIDIndex][sTeach]) + "," + to_string(associatedProfessors[parentID][profIDIndex][0]);
                 }
-                //cout << genes[ associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] ]->getProfID( ) << " is teaching " << associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] << endl;
             }
         }
     }
     return "";
 }
 
-string Chromosome::shiftSectionToUnderloaded(int target, int parentID, int profID, int ** sectionProf, int ** profSection, double * sectionCredit, int *** associatedProfessors) {
+/// <summary>
+/// Shifts the section to underloaded.
+/// </summary>
+/// <param name="target">The target.</param>
+/// <param name="parentID">The parent identifier.</param>
+/// <param name="profID">The prof identifier.</param>
+/// <param name="sectionProf">The section prof.</param>
+/// <param name="profSection">The prof section.</param>
+/// <param name="associatedProfessors">The associated professors.</param>
+/// <returns></returns>
+string Chromosome::shiftSectionToUnderloaded(int target, int parentID, int profID, int ** sectionProf, int ** profSection, int *** associatedProfessors) {
     if (DEBUG_BALANCEPROFLOAD)
         cout << "Shift Section with parent: " << parentID << " and prof " << profID << endl;
     visitedProfessors[profID] = true;
@@ -382,11 +501,9 @@ string Chromosome::shiftSectionToUnderloaded(int target, int parentID, int profI
                 break;
         }
         for (int sTeach = 2; sTeach <= associatedProfessors[parentID][profIDIndex][1] + 1; ++sTeach) {
-            if (genes[associatedProfessors[parentID][profIDIndex][sTeach]]->getProfID() == profID) {
-                //cout << "Returning: " << associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] << endl;
+            if (getProf(associatedProfessors[parentID][profIDIndex][sTeach]) == profID) {
                 return to_string(associatedProfessors[parentID][profIDIndex][sTeach]) + "," + to_string(associatedProfessors[parentID][profIDIndex][0]);
             }
-            //cout << genes[ associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] ]->getProfID( ) << " is teaching " << associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] << endl;
         }
         if (DEBUG_BALANCEPROFLOAD)
             cout << "Unable to find a shared section between " << parentID << " and prof " << profID << endl;
@@ -402,18 +519,17 @@ string Chromosome::shiftSectionToUnderloaded(int target, int parentID, int profI
             continue;
         bool good = false;
         for (int x = 2; x <= associatedProfessors[profID][associateIndex][1] + 1 && !good; ++x) {
-            if (genes[associatedProfessors[profID][associateIndex][x]]->getProfID() == associatedProfessors[profID][associateIndex][0])
+            if (getProf(associatedProfessors[profID][associateIndex][x]) == associatedProfessors[profID][associateIndex][0])
                 good = true;
         }
         if (!good)
             continue;
-        string sectionToTransfer = shiftSectionToUnderloaded(target, profID, associatedProfessors[profID][associateIndex][0], sectionProf, profSection, sectionCredit, associatedProfessors);
+        string sectionToTransfer = shiftSectionToUnderloaded(target, profID, associatedProfessors[profID][associateIndex][0], sectionProf, profSection, associatedProfessors);
         if (!sectionToTransfer.empty()) {
             vector<string> data = Utility::Tokenize(sectionToTransfer, ',');
             int newProf = stoi(data.at(1));
             int section = stoi(data.at(0));
-            genes[section]->setProfID(profID);
-            updateProfLoad(sectionCredit);
+            setProf(section, profID);
             if (professorCredits[newProf] < 0)
                 visitedProfessors[newProf] = false;
             int profIDIndex = 1;
@@ -422,11 +538,9 @@ string Chromosome::shiftSectionToUnderloaded(int target, int parentID, int profI
                     break;
             }
             for (int sTeach = 2; sTeach <= associatedProfessors[parentID][profIDIndex][1] + 1; ++sTeach) {
-                if (genes[associatedProfessors[parentID][profIDIndex][sTeach]]->getProfID() == profID) {
-                    //cout << "Returning: " << associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] << endl;
+                if (getProf(associatedProfessors[parentID][profIDIndex][sTeach]) == profID) {
                     return to_string(associatedProfessors[parentID][profIDIndex][sTeach]) + "," + to_string(associatedProfessors[parentID][profIDIndex][0]);
                 }
-                //cout << genes[ associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] ]->getProfID( ) << " is teaching " << associatedProfessors[ parentID ][ profIDIndex ][ sTeach ] << endl;
             }
         }
     }
@@ -434,14 +548,21 @@ string Chromosome::shiftSectionToUnderloaded(int target, int parentID, int profI
 }
 
 
-void Chromosome::balanceProfLoad(int ** sectionProf, int ** profSection, double * sectionCredit, int *** associatedProfessors)
+/// <summary>
+/// Balances the prof load.
+/// </summary>
+/// <param name="sectionProf">The section prof.</param>
+/// <param name="profSection">The prof section.</param>
+/// <param name="associatedProfessors">The associated professors.</param>
+void Chromosome::balanceProfLoad(int ** sectionProf, int ** profSection, int *** associatedProfessors)
 {
     int prevProfBalancedCount = 0;
     int currentProfBalancedCount = 0;
-    int * profBackupList = new int[gene_length];
+    int * profBackupList = new int[section_count];
+    int tries = 0;
     do {
-        for (int i = 0; i < gene_length; ++i) {
-            profBackupList[i] = genes[i]->getProfID();
+        for (int i = 0; i < section_count; ++i) {
+            profBackupList[i] = getProf(i);
         }
 
         prevProfBalancedCount = currentProfBalancedCount;
@@ -461,21 +582,20 @@ void Chromosome::balanceProfLoad(int ** sectionProf, int ** profSection, double 
                             cout << " Associate: " << associatedProfessors[profID][associateIndex][0] << endl;
                         bool good = false;
                         for (int x = 2; x <= associatedProfessors[profID][associateIndex][1] + 1; ++x) {
-                            if (genes[associatedProfessors[profID][associateIndex][x]]->getProfID() == profID) {
+                            if (getProf(associatedProfessors[profID][associateIndex][x]) == profID) {
                                 good = true;
                                 break;
                             }
                         }
                         if (!good)
                             continue;
-                        string sectionToShift = shiftSectionToOverloaded(profID, profID, associatedProfessors[profID][associateIndex][0], sectionProf, profSection, sectionCredit, associatedProfessors);
+                        string sectionToShift = shiftSectionToOverloaded(profID, profID, associatedProfessors[profID][associateIndex][0], sectionProf, profSection, associatedProfessors);
                         if (sectionToShift.empty())
                             continue;
                         vector<string> data = Utility::Tokenize(sectionToShift, ',');
                         int newProf = stoi(data.at(1));
                         int section = stoi(data.at(0));
-                        genes[section]->setProfID(newProf);
-                        updateProfLoad(sectionCredit);
+                        setProf(section, newProf);
                         if (professorCredits[newProf] > 0)
                             visitedProfessors[newProf] = false;
 
@@ -505,14 +625,13 @@ void Chromosome::balanceProfLoad(int ** sectionProf, int ** profSection, double 
                     for (; associateIndex <= associatedProfessors[profID][0][0] && professorCredits[profID] > DELTA_MIN; ++associateIndex) {
                         if (DEBUG_BALANCEPROFLOAD)
                             cout << " Associate: " << associatedProfessors[profID][associateIndex][0] << endl;
-                        string sectionToShift = shiftSectionToUnderloaded(profID, profID, associatedProfessors[profID][associateIndex][0], sectionProf, profSection, sectionCredit, associatedProfessors);
+                        string sectionToShift = shiftSectionToUnderloaded(profID, profID, associatedProfessors[profID][associateIndex][0], sectionProf, profSection, associatedProfessors);
                         if (sectionToShift.empty())
                             continue;
                         vector<string> data = Utility::Tokenize(sectionToShift, ',');
                         int newProf = stoi(data.at(1));
                         int section = stoi(data.at(0));
-                        genes[section]->setProfID(profID);
-                        updateProfLoad(sectionCredit);
+                        setProf(section, profID);
                         if (professorCredits[newProf] < 0)
                             visitedProfessors[newProf] = false;
                     }
@@ -529,15 +648,19 @@ void Chromosome::balanceProfLoad(int ** sectionProf, int ** profSection, double 
                 }
             }
         }
-    } while (prevProfBalancedCount > currentProfBalancedCount && currentProfBalancedCount != 0);
-    if (currentProfBalancedCount > prevProfBalancedCount) {
-        for (int i = 0; i < gene_length; ++i) {
-            genes[i]->setProfID(profBackupList[i]);
+    } while (prevProfBalancedCount >= currentProfBalancedCount && currentProfBalancedCount != 0 && ++tries < REPAIR_MAX);
+    if (currentProfBalancedCount > prevProfBalancedCount || currentProfBalancedCount != 0) {
+        for (int i = 0; i < section_count; ++i) {
+            setProf(i, profBackupList[i]);
         }
     }
     delete[] profBackupList;
 }
 
+/// <summary>
+/// Check if the professors are balanced.
+/// </summary>
+/// <returns><c>True</c> if the professors are balanced, <c>false</c> otherwise.</returns>
 bool Chromosome::professorsBalanced() {
     for (int i = 0; i < prof_count; ++i) {
         if (!(professorCredits[i] >= DELTA_MAX && professorCredits[i] <= DELTA_MIN))
@@ -546,34 +669,43 @@ bool Chromosome::professorsBalanced() {
     return true;
 }
 
-void Chromosome::repair(int * sortedSectionList, bool ** incompatibleSectionsMatrix, bool ** timeslotConflict, double * sectionCredit, int ** sectionTimeslot, int ** sectionProf, int ** profSection, int *** associatedProfessors) {
+/// <summary>
+/// Repairs the current chromosome.
+/// </summary>
+/// <param name="sortedSectionList">The sorted section list.</param>
+/// <param name="incompatibleSectionsMatrix">The incompatible sections matrix.</param>
+/// <param name="timeslotConflict">The timeslot conflict.</param>
+/// <param name="sectionTimeslot">The section timeslot.</param>
+/// <param name="sectionProf">The section prof.</param>
+/// <param name="profSection">The prof section.</param>
+/// <param name="associatedProfessors">The associated professors.</param>
+void Chromosome::repair(int * sortedSectionList, bool ** incompatibleSectionsMatrix, bool ** timeslotConflict, int ** sectionTimeslot, int ** sectionProf, int ** profSection, int *** associatedProfessors) {
     int retry = 0;
     do {
-        balanceProfLoad(sectionProf, profSection, sectionCredit, associatedProfessors);
-        bool ** sectionTimeTabooList = new bool*[gene_length];
-        for (int i = 0; i < gene_length; ++i) {
+        balanceProfLoad(sectionProf, profSection, associatedProfessors);
+        bool ** sectionTimeTabooList = new bool*[section_count];
+        for (int i = 0; i < section_count; ++i) {
             sectionTimeTabooList[i] = new bool[timeslot_count]();
         }
-        for (int index = 0; index < gene_length; ++index) {
+        for (int index = 0; index < section_count; ++index) {
             int currentSection = sortedSectionList[index];
-            for (int otherSection = 0; otherSection < gene_length; ++otherSection) {
+            for (int otherSection = 0; otherSection < section_count; ++otherSection) {
                 if (currentSection == otherSection)
                     continue;
-                if (incompatibleSectionsMatrix[currentSection][otherSection] || genes[currentSection]->getProfID() == genes[otherSection]->getProfID()) {
-                    if (timeslotConflict[genes[currentSection]->getTimeID()][genes[otherSection]->getTimeID()]) {
-                        sectionTimeTabooList[currentSection][genes[currentSection]->getTimeID()] = true;
+                if (incompatibleSectionsMatrix[currentSection][otherSection] || getProf(currentSection) == getProf(otherSection)) {
+                    if (timeslotConflict[getTime(currentSection)][getTime(otherSection)]) {
+                        sectionTimeTabooList[currentSection][getTime(currentSection)] = true;
                         int potentialTimeslotIndex = 1;
 
                         for (; potentialTimeslotIndex <= sectionTimeslot[currentSection][0] && sectionTimeTabooList[currentSection][sectionTimeslot[currentSection][potentialTimeslotIndex]]; ++potentialTimeslotIndex) {
                             ;
                         }
-                        genes[currentSection]->setTimeID(sectionTimeslot[currentSection][potentialTimeslotIndex]);
-
+                        setTime(currentSection, sectionTimeslot[currentSection][potentialTimeslotIndex]);
                     }
                 }
             }
         }
-        for (int i = 0; i < gene_length; ++i) {
+        for (int i = 0; i < section_count; ++i) {
             delete[] sectionTimeTabooList[i];
         }
         delete[] sectionTimeTabooList;
@@ -581,7 +713,21 @@ void Chromosome::repair(int * sortedSectionList, bool ** incompatibleSectionsMat
     } while (!valid && ++retry < REPAIR_MAX);
 }
 
-void Chromosome::optimize(int ** sectionProf, int ** sectionTimeslot, Helper * h, double * sectionCredit, int ** profSection, int ** sectionPref, int ** profPref, bool ** incompatibleSectionsMatrix, bool ** timeslotDaytime, bool ** timeslotConflict, bool ** timeslotConsecutive, bool ** timeslotSpread) {
+/// <summary>
+/// Optimizes the current chromosome.
+/// </summary>
+/// <param name="sectionProf">The section prof.</param>
+/// <param name="sectionTimeslot">The section timeslot.</param>
+/// <param name="h">The h.</param>
+/// <param name="profSection">The prof section.</param>
+/// <param name="sectionPref">The section preference.</param>
+/// <param name="profPref">The prof preference.</param>
+/// <param name="incompatibleSectionsMatrix">The incompatible sections matrix.</param>
+/// <param name="timeslotDaytime">The timeslot daytime.</param>
+/// <param name="timeslotConflict">The timeslot conflict.</param>
+/// <param name="timeslotConsecutive">The timeslot consecutive.</param>
+/// <param name="timeslotSpread">The timeslot spread.</param>
+void Chromosome::optimize(int ** sectionProf, int ** sectionTimeslot, Helper * h, int ** profSection, int ** sectionPref, int ** profPref, bool ** incompatibleSectionsMatrix, bool ** timeslotDaytime, bool ** timeslotConflict, bool ** timeslotConsecutive, bool ** timeslotSpread) {
     /*
     Idea:
     1. Swap 2 faculty.
@@ -603,7 +749,7 @@ void Chromosome::optimize(int ** sectionProf, int ** sectionTimeslot, Helper * h
      Ensure when swapping that the schedule is not invalidated.
      */
     bool swapSuccess = false;
-    for (; sectionIdx < gene_length; ++sectionIdx) {
+    for (; sectionIdx < section_count; ++sectionIdx) {
         //Does the current section have more than two profs associated?
         if (sectionProf[sectionIdx][0] > 1) {
             //Find one professor who is not teaching this course
@@ -619,24 +765,23 @@ void Chromosome::optimize(int ** sectionProf, int ** sectionTimeslot, Helper * h
             //Now find a section that the other prof is teaching to swap with,
             //such that the chromosome is not invalidated
             for (int newSectionIdx = 0;
-            newSectionIdx < gene_length && !swapSuccess;
+            newSectionIdx < section_count && !swapSuccess;
                 ++newSectionIdx) {
                 if (getProf(newSectionIdx) == profToSwapWith) {
                     //Can the currentProf teach this section
                     for (int canTeach = 1; canTeach <= sectionProf[newSectionIdx][0] && !swapSuccess; ++canTeach) {
-                        if (sectionProf[newSectionIdx][canTeach]
-                            == currentProf) {
+                        if (sectionProf[newSectionIdx][canTeach] == currentProf) {
                             //Perform swap
-                            setProf(sectionIdx, profToSwapWith, sectionCredit[sectionIdx]);
-                            setProf(newSectionIdx, currentProf, sectionCredit[newSectionIdx]);
+                            setProf(sectionIdx, profToSwapWith);
+                            setProf(newSectionIdx, currentProf);
                             //check valid
                             validate(incompatibleSectionsMatrix, timeslotConflict, false);
                             updateFitness(incompatibleSectionsMatrix, sectionPref, profPref, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
                             //Check if swap was valid and it is better fitness
                             if (!valid && fitness > startingFitness) {
                                 //Undo the swap
-                                setProf(sectionIdx, currentProf, sectionCredit[sectionIdx]);
-                                setProf(newSectionIdx, profToSwapWith, sectionCredit[newSectionIdx]);
+                                setProf(sectionIdx, currentProf);
+                                setProf(newSectionIdx, profToSwapWith);
                                 continue;
                             }
                             else {
@@ -649,12 +794,18 @@ void Chromosome::optimize(int ** sectionProf, int ** sectionTimeslot, Helper * h
                             }
                         } //if(sectionProf[ newSectionIdx ][ canTeach ] == currentProf)
                     } //for(int canTeach = 1; canTeach <= sectionProf[ newSectionIdx ][ 0 ] && !swapSuccess; ++canTeach)
-                }                 //if(getProf(newSectionIdx) == profToSwapWith)
+                }//if(getProf(newSectionIdx) == profToSwapWith)
             } // for(int newSectionIdx = 0; newSectionIdx < gene_length && !swapSuccess; ++newSectionIdx)
         } //if(sectionProf[ sectionIdx ][ 0 ] > 1)
     } //for(; sectionIdx < gene_length; ++sectionIdx)
 }
 
+/// <summary>
+/// Validates the current chromosome
+/// </summary>
+/// <param name="incompatibleSectionsMatrix">The incompatible sections matrix.</param>
+/// <param name="timeslotConflict">The timeslot conflict.</param>
+/// <param name="verbose">if set to <c>true</c>, prints the invalidities.</param>
 void Chromosome::validate(bool ** incompatibleSectionsMatrix, bool ** timeslotConflict, bool verbose) {
     valid = true;
     bool localValid = true;
@@ -681,13 +832,11 @@ void Chromosome::validate(bool ** incompatibleSectionsMatrix, bool ** timeslotCo
         }
     }
 
-    for (int left = 0; left < gene_length && valid; ++left) {
+    for (int left = 0; left < section_count && valid; ++left) {
         int leftProf = getProf(left);
-        for (int right = left + 1; right < gene_length && valid; ++right) {
+        for (int right = left + 1; right < section_count && valid; ++right) {
             int rightProf = getProf(right);
             if (leftProf == rightProf && timeslotConflict[getTime(left)][getTime(right)]) {
-                //int leftTime = getTime(left), rightTime = getTime(right);
-                //if(timeslotConflict[ leftTime ][ rightTime ]) {//timeSlots[ leftTime ]->isOverlap(timeSlots[ rightTime ])) {
                 if (verbose)
                     cout << "Incompatible Prof: " << left << " with " << right << endl;
                 valid = false;
@@ -698,11 +847,9 @@ void Chromosome::validate(bool ** incompatibleSectionsMatrix, bool ** timeslotCo
         }
     }
 
-
-
-    for (int left = 0; left < gene_length && valid; ++left) {
+    for (int left = 0; left < section_count && valid; ++left) {
         int leftTime = getTime(left);
-        for (int right = left + 1; right < gene_length && valid; ++right) {
+        for (int right = left + 1; right < section_count && valid; ++right) {
             if (!incompatibleSectionsMatrix[left][right])
                 continue;
             int rightTime = getTime(right);
@@ -721,21 +868,32 @@ void Chromosome::validate(bool ** incompatibleSectionsMatrix, bool ** timeslotCo
     }
 }
 
+/// <summary>
+/// Updates the fitness.
+/// </summary>
+/// <param name="incompatibleSectionsMatrix">The incompatible sections matrix.</param>
+/// <param name="sectionPref">The section preference.</param>
+/// <param name="profPref">The prof preference.</param>
+/// <param name="timeslotDaytime">The timeslot daytime.</param>
+/// <param name="timeslotConflict">The timeslot conflict.</param>
+/// <param name="timeslotConsecutive">The timeslot consecutive.</param>
+/// <param name="timeslotSpread">The timeslot spread.</param>
 void Chromosome::updateFitness(bool ** incompatibleSectionsMatrix, int ** sectionPref, int ** profPref, bool ** timeslotDaytime, bool ** timeslotConflict, bool ** timeslotConsecutive, bool ** timeslotSpread) {
     fitness = MAXFITNESS;
-    bool * profConflict = new bool[gene_length];
+    bool * profConflict = new bool[section_count];
     int numConflicts = 0;
     vector<int> * professorTimeSlotsAssigned = new vector<int>[prof_count];
     //Check for hard constraint violation for professor
-    for (int left = 0; left < gene_length; left++) {
+    for (int left = 0; left < section_count; left++) {
         if (left < 0)
-            cout << "Inside loop: " << gene_length;
-        int leftProf = genes[left]->getProfID();
-        professorTimeSlotsAssigned[leftProf].push_back(genes[left]->getTimeID());
-        for (int right = left + 1; right < gene_length; right++) {
-            int rightProf = genes[right]->getProfID();
+            cout << "Inside loop: " << section_count;
+        int leftProf = getProf(left);//sections[left]->getProfID();
+        professorTimeSlotsAssigned[leftProf].push_back(getTime(left));//sections[left]->getTimeID());
+        for (int right = left + 1; right < section_count; right++) {
+            int rightProf = getProf(right);//sections[right]->getProfID();
             if (leftProf == rightProf) {
-                int leftTime = genes[left]->getTimeID(), rightTime = genes[right]->getTimeID();
+                int leftTime = getTime(left),//sections[left]->getTimeID(), 
+                    rightTime = getTime(right);//sections[right]->getTimeID();
                 if (leftTime == rightTime || timeslotConflict[leftTime][rightTime]) {// timeSlots[ leftTime ]->isOverlap(timeSlots[ rightTime ])) {
                     if (DEBUG_FITNESS)
                         cout << "Incompatible Prof Time: " << left << " with " << right << endl;
@@ -765,12 +923,12 @@ void Chromosome::updateFitness(bool ** incompatibleSectionsMatrix, int ** sectio
     }
 
     //Check for hard constraint violation for timeID conflict
-    for (int left = 0; left < gene_length; left++) {
+    for (int left = 0; left < section_count; left++) {
         if (left < 0)
-            cout << "Inside loop2: " << gene_length;
-        int leftTime = genes[left]->getTimeID();
-        for (int right = left + 1; right < gene_length; ++right) {
-            if (incompatibleSectionsMatrix[left][right] && genes[right]->getTimeID() == leftTime) {
+            cout << "Inside loop2: " << section_count;
+        int leftTime = getTime(left);//sections[left]->getTimeID();
+        for (int right = left + 1; right < section_count; ++right) {
+            if (incompatibleSectionsMatrix[left][right] && getTime(right) == leftTime) {
                 if (DEBUG_FITNESS)
                     cout << "Incompatible Time: " << left << " with " << right << endl;
                 fitness -= PENALTY_SECTION_TIME_CONFLICT;
@@ -779,19 +937,19 @@ void Chromosome::updateFitness(bool ** incompatibleSectionsMatrix, int ** sectio
     }
 
     //Check for soft constraint for prof timeID preference.
-    for (int secID = 0; secID < gene_length; secID++) {
-        int timeAlloted = timeslotDaytime[genes[secID]->getTimeID()][0] ? 0 : (timeslotDaytime[genes[secID]->getTimeID()][1] ? 1 : 2);
+    for (int secID = 0; secID < section_count; secID++) {
+        int timeAlloted = timeslotDaytime[getTime(secID)][0] ? 0 : (timeslotDaytime[getTime(secID)][1] ? 1 : 2);
 
         if (DEBUG_FITNESS) {
             ; //cout << "Allotment: " << profPref[genes[secID].getProfID( )][timeAlloted] << " Penalty: " << MAX_FITNESS << "/" << pow(prof_count + gene_length, 2.0) << " = " << MAX_FITNESS / pow((prof_count + gene_length), 2.0) << endl;
         }
-        fitness -= profPref[genes[secID]->getProfID()][timeAlloted] * PENALTY_PROFESSOR_PREFERENCE;
+        fitness -= profPref[getProf(secID)][timeAlloted] * PENALTY_PROFESSOR_PREFERENCE;
 
     }
 
     //Check for soft constraint for section timeID preference.
-    for (int secID = 0; secID < gene_length; secID++) {
-        int timeAlloted = timeslotDaytime[genes[secID]->getTimeID()][0] ? 0 : (timeslotDaytime[genes[secID]->getTimeID()][1] ? 1 : 2);
+    for (int secID = 0; secID < section_count; secID++) {
+        int timeAlloted = timeslotDaytime[getTime(secID)][0] ? 0 : (timeslotDaytime[getTime(secID)][1] ? 1 : 2);
         fitness -= sectionPref[secID][timeAlloted] * PENALTY_SECTION_PREFERENCE;
     }
 
@@ -821,63 +979,76 @@ void Chromosome::updateFitness(bool ** incompatibleSectionsMatrix, int ** sectio
         cout << "Current Fitness: " << fitness << endl;
 }
 
-void Chromosome::updateProfLoad(double * sectionCredit) {
+/// <summary>
+/// Updates the professor load.
+/// </summary>
+/// <param name="sectionCredit">The section credit.</param>
+void Chromosome::updateProfLoad() {
     //Reset all professor credit values
     for (int prof = 0; prof < prof_count; ++prof) {
         professorCredits[prof] = professorCreditsInitial[prof];
     }
 
     //Iterate through all sections and update the associated prof credit
-    for (int section = 0; section < gene_length; ++section) {
+    for (int section = 0; section < section_count; ++section) {
         professorCredits[getProf(section)] -= sectionCredit[section];
     }
 }
 
+/// <summary>
+/// Prints the prof table.
+/// </summary>
+/// <param name="sectionCredit">The section credit.</param>
+/// <returns></returns>
 string Chromosome::printProfTable() {
     ostringstream ss;
     string * profs = new string[prof_count];
+
+    string * profsCourseCredit = new string[prof_count];
+    double * profSum = new double[prof_count]();
+
     for (int i = 0; i < prof_count; ++i) {
         profs[i] = (i < 10 ? " " : "") + to_string(i) + " ["
             + (professorCredits[i] < 0 ? "" : " ")
-            + Utility::FormatDouble(professorCredits[i], 2) + "]: ";
+            + Utility::FormatDouble(professorCredits[i], 2) + "," + Utility::FormatDouble(professorCreditsInitial[i], 2) + "]: ";
         if (professorCredits[i] < DELTA_MAX || professorCredits[i] > DELTA_MIN)
             profs[i] = "# " + profs[i];
         else
             profs[i] = "  " + profs[i];
     }
-    for (int i = 0; i < gene_length; ++i) {
+    for (int i = 0; i < section_count; ++i) {
         profs[getProf(i)] += to_string(i) + ", ";
+        if (DEBUG_PROF_LOAD) {
+            profsCourseCredit[getProf(i)] += to_string(sectionCredit[i]) + " + ";
+            profSum[getProf(i)] += sectionCredit[i];
+        }
     }
     for (int i = 0; i < prof_count; ++i) {
-        ss << profs[i] << endl;
+        ss << profs[i];
+        if (DEBUG_PROF_LOAD)
+            ss << " & " << profsCourseCredit[i] << " = " << profSum[i] << "(" << (professorCreditsInitial[i] - profSum[i]) << ")" << endl;
     }
     delete[] profs;
+    delete[] profsCourseCredit;
+    delete[] profSum;
     return ss.str();
 }
 
+/// <summary>
+/// Counts the number of points of difference between current chromosome and parent chromosome.
+/// </summary>
+/// <param name="parent">The parent.</param>
+/// <returns><c>Integer</c> count of the number of difference.</returns>
 int Chromosome::DifferenceCount(Chromosome * const parent) {
     int diffs = 0;
-    for (int i = 0; i < gene_length; ++i) {
-        if (genes[i]->getProfID() != parent->genes[i]->getProfID()) {
+    for (int i = 0; i < section_count; ++i) {
+        if (getProf(i) != parent->getProf(i)) {
             diffs++;
         }
-        if (genes[i]->getTimeID() != parent->genes[i]->getTimeID()) {
+        if (getTime(i) != parent->getTime(i)) {
             diffs++;
         }
     }
 
     return diffs;
-}
-
-bool operator==(Chromosome &ch1, Chromosome &ch2) {
-    if (ch1.gene_length != ch2.gene_length)
-        return false;
-
-    for (int i = 0; i < ch1.gene_length; i++) {
-        if (ch1.genes[i]->getProfID() != ch2.genes[i]->getProfID()
-            || ch1.genes[i]->getTimeID() != ch2.genes[i]->getTimeID())
-            return false;
-    }
-
-    return true;
 }

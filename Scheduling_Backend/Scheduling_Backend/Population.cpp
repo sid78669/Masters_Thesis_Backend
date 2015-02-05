@@ -267,7 +267,7 @@ void Population::readDatFiles() {
 
     statFile << "Mean, SD;" << endl;
 
-    statFile << "0," << GetFitnessData();
+    statFile << "0," << GetFitnessData() << endl;
 } //end readDatFiles()
 
 bool Population::sortByProfessorCount(int i, int j) {
@@ -708,7 +708,7 @@ void Population::readInitialSchedule(ifstream &inFile) {
 
     vector<string> tokenizedVersion;
     string currLine;
-    individuals[0] = new Chromosome(section_count, professor_count, timeslot_count, profCreditMax);
+    individuals[0] = new Chromosome(section_count, professor_count, timeslot_count, profCreditMax, sectionCredit);
 
     if (inFile.is_open()) {
         while (getline(inFile, currLine)) {
@@ -723,9 +723,9 @@ void Population::readInitialSchedule(ifstream &inFile) {
             tokenizedVersion = Utility::Tokenize(currLine, ',');
             int geneLocation = stoi(tokenizedVersion.at(0));
             Gene current(stoi(tokenizedVersion.at(1)), stoi(tokenizedVersion.at(2)));
-            individuals[0]->setGene(geneLocation, current);
+            individuals[0]->setGene(geneLocation, current);            
         }
-        individuals[0]->updateProfLoad(sectionCredit);
+        //individuals[0]->updateProfLoad(sectionCredit);
         if (DEBUG_INIT)
             debug << individuals[0]->print() << endl;
     }
@@ -763,7 +763,7 @@ void Population::initPopulationFromFirst() {
         if (DEBUG_INIT_POPULATION_COMPARED)
             debug << "Pre-Mutation: " << endl << individuals[i]->print();
 
-        individuals[i]->evolve(sortedSectionList, sectionProf, sectionTimeslot, &h, mutation_probability, sectionCredit, incompatibleSectionsMatrix, timeslotConflict, credit_count, profSection, associatedProfessors, sectionPref, profPref, timeslotDaytime, timeslotConsecutive, timeslotSpread);
+        individuals[i]->evolve(sortedSectionList, sectionProf, sectionTimeslot, &h, mutation_probability, incompatibleSectionsMatrix, timeslotConflict, credit_count, profSection, associatedProfessors, sectionPref, profPref, timeslotDaytime, timeslotConsecutive, timeslotSpread);
 
         if (individuals[i]->getFitness() < individuals[weakestIndividualID]->getFitness()) {
             weakestIndividualID = i;
@@ -848,7 +848,6 @@ int Population::getWeightedRandomIndividual() {
         scaledFitness[i] = (individuals[i]->getFitness() - minWeight) + scale;
         scaledMax += scaledFitness[i];
     }
-    debug << endl;
     int scaledMin = scale;
     int randomWeight = h.randNum(scaledMin, scaledMax);
     int rtnVal = 0;
@@ -909,7 +908,9 @@ void Population::Evolve() {
             debug << "Sacrifice: " << endl << child->print() << "Source: " << endl << individuals[parentID]->print() << endl;
         }
 
-        child->evolve(sortedSectionList, sectionProf, sectionTimeslot, &h, mutation_probability, sectionCredit, incompatibleSectionsMatrix, timeslotConflict, credit_count, profSection, associatedProfessors, sectionPref, profPref, timeslotDaytime, timeslotConsecutive, timeslotSpread);
+        child->evolve(sortedSectionList, sectionProf, sectionTimeslot, &h, mutation_probability, incompatibleSectionsMatrix, timeslotConflict, credit_count, profSection, associatedProfessors, sectionPref, profPref, timeslotDaytime, timeslotConsecutive, timeslotSpread);
+        if (DEBUG_EVOLVE)
+            debug << child->printProfTable();
         int diffCount = child->DifferenceCount(individuals[parentID]);
         if (currentGeneration > threshold_generation && !child->isValid()) {
             currentGeneration--;
@@ -940,7 +941,7 @@ void Population::Evolve() {
                 debug << individuals[weakestIndividualID]->print();
             //If we are past the threshold generation, we want to start creating a valid population.
             if (currentGeneration > threshold_generation && !validityConfirmed) {
-                
+
                 int weakestInvalid = -1;
                 int lowestFitness = lowestFitnessSeen;
                 for (int j = 0; j < population_size; ++j) {
@@ -993,13 +994,7 @@ void Population::Evolve() {
         if (currentGeneration > 0) {
             statFile << currentGeneration << ",";
             statFile << GetFitnessData() << endl;
-            debug << currentGeneration << ",\t" << diffCount << ",\t" << (diffCount*1.0 / (section_count*2.0));
-            if (child->isValid()) {
-                debug << ", 1" << endl;
-            }
-            else {
-                debug << ", 0" << endl;
-            }
+            debug << currentGeneration << ",\t" << diffCount << ",\t" << (diffCount*1.0 / (section_count*2.0)) << endl;
         }
         delete child;
     }
@@ -1053,7 +1048,7 @@ void Population::PrintEnd() {
 
     outputFile << "\n\nStrongest Individual: " << strongestIndividualID << endl;
     outputFile << "**BEGINRESULT**" << endl;
-    outputFile << individuals[strongestIndividualID]->printTuple();
+    outputFile << individuals[strongestIndividualID]->print();
     outputFile << "**ENDRESULT**" << endl;
     outputFile << "Fitness: " << strongestFitness << endl;
 
@@ -1100,7 +1095,7 @@ void Population::PrintEnd() {
         }
         if (!unique && individuals[i]->isValid(incompatibleSectionsMatrix, timeslotConflict, false)) {
             outputFile << "*START*SCHEDULE*" << cntr << endl;
-            outputFile << individuals[i]->printTuple() << endl;
+            outputFile << individuals[i]->print() << endl;
             outputFile << "Validity: " << (individuals[i]->isValid() ? "Yes" : "No") << endl;
             outputFile << "Fitness: " << individuals[i]->getFitness() << endl;
             outputFile << "*END*SCHEDULE*" << endl;

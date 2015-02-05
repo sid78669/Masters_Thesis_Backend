@@ -52,31 +52,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="sections.dat">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="timeslot.dat">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="professors.dat">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="init.dat">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="inputFiles.dat">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="new_input.dat">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="input.dat">
-      <Filter>Resource Files</Filter>
+      <Filter>Source Files</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="courses.dat">
-      <Filter>Resource Files</Filter>
-    </Text>
   </ItemGroup>
 </Project>
