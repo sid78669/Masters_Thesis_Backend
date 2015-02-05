@@ -58,7 +58,7 @@ Chromosome::Chromosome(int sectionCount, int profCount, int timeslotCount, doubl
 /// </summary>
 /// <param name="source">The source chromosome.</param>
 Chromosome::Chromosome(Chromosome * source) :
-    section_count(source->section_count), prof_count(source->prof_count), timeslot_count(source->timeslot_count) {
+section_count(source->section_count), prof_count(source->prof_count), timeslot_count(source->timeslot_count) {
     sectionCredit = source->sectionCredit;
     valid = source->valid;
     sections = new Gene*[section_count];
@@ -84,7 +84,7 @@ Chromosome::Chromosome(Chromosome * source) :
 /// </summary>
 /// <param name="source">The source chromosome.</param>
 Chromosome::Chromosome(Chromosome &source) :
-    section_count(source.section_count), prof_count(source.prof_count), timeslot_count(source.timeslot_count) {
+section_count(source.section_count), prof_count(source.prof_count), timeslot_count(source.timeslot_count) {
     valid = source.valid;
     sectionCredit = source.sectionCredit;
     sections = new Gene*[section_count];
@@ -184,7 +184,7 @@ bool Chromosome::isValid() {
 /// <param name="verbose">if set to <c>true</c>, print all invalidities.</param>
 /// <returns><c>True</c> is the chromosome is valid, <c>false</c> otherwise.</returns>
 bool Chromosome::isValid(bool ** incompatibleSectionsMatrix, bool ** timeslotConflict, bool verbose) {
-    validate(incompatibleSectionsMatrix, timeslotConflict, verbose);
+    validate(incompatibleSectionsMatrix, timeslotConflict);
     return valid;
 }
 
@@ -314,7 +314,7 @@ bool Chromosome::validProfessorLoadChange(int p, double credit) {
 string Chromosome::print() {
     string rtnVal;
     for (int i = 0; i < section_count; i++) {
-        rtnVal += to_string(i) + ", " + print(i) + "\n";
+        rtnVal += "s" + to_string(i) + ", " + print(i) + "\n";
     }
 
     rtnVal += "----------------------------\n";
@@ -328,7 +328,7 @@ string Chromosome::print() {
 /// <param name="sectionID">The section identifier.</param>
 /// <returns></returns>
 string Chromosome::print(int sectionID) {
-    return to_string(getProf(sectionID)) + ", " + to_string(getTime(sectionID));
+    return "p" + to_string(getProf(sectionID)) + ", t" + to_string(getTime(sectionID));
 }
 
 /// <summary>
@@ -356,6 +356,25 @@ void Chromosome::evolve(int * const sortedSectionList, int ** const sectionProf,
     updateFitness(incompatibleSectionsMatrix, sectionPref, profPref, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
     if (isValid())
         optimize(sectionProf, sectionTimeslot, h, profSection, sectionPref, profPref, incompatibleSectionsMatrix, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
+}
+
+string Chromosome::evolveVerbose(int * const sortedSectionList, int ** const sectionProf, int ** const sectionTimeslot, Helper * const h, int const mutation_probability, bool ** const incompatibleSectionsMatrix, bool ** const timeslotConflict, int credit_count, int ** const profSection, int *** const associatedProfessors, int ** const sectionPref, int ** const profPref, bool ** const timeslotDaytime, bool ** const timeslotConsecutive, bool ** const timeslotSpread) {
+    stringstream ss;
+    ss << "Evolving Verbose" << endl;
+    updateTabooList(incompatibleSectionsMatrix);
+    ss << "Pre-mutation" << endl << print();
+    mutate(incompatibleSectionsMatrix, sortedSectionList, sectionProf, sectionTimeslot, h, mutation_probability);
+    ss << "Post-mutation" << endl << print();
+    ss << "Pre-Repair: " << endl << validateVerbose(incompatibleSectionsMatrix, timeslotConflict);
+    debug.clear();
+    repair(sortedSectionList, incompatibleSectionsMatrix, timeslotConflict, sectionTimeslot, sectionProf, profSection, associatedProfessors);
+    ss << debug.str();
+    ss << "Post-Repair: " << endl << validateVerbose(incompatibleSectionsMatrix, timeslotConflict);
+    updateFitness(incompatibleSectionsMatrix, sectionPref, profPref, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
+
+    if (isValid())
+        optimize(sectionProf, sectionTimeslot, h, profSection, sectionPref, profPref, incompatibleSectionsMatrix, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
+    return ss.str();
 }
 
 /// <summary>
@@ -423,7 +442,7 @@ void Chromosome::mutate(bool ** incompatibleSectionsMatrix, int * sortedSectionL
 /// <returns>A string containing the professor to shift and the course to shift to the professor.</returns>
 string Chromosome::shiftSectionToOverloaded(int target, int parentID, int profID, int ** sectionProf, int ** profSection, int *** associatedProfessors) {
     if (DEBUG_BALANCEPROFLOAD)
-        cout << "Shift Section with parent: " << parentID << " and prof " << profID << endl;
+        debug << "Shift Section with parent: " << parentID << " and prof " << profID << endl;
     visitedProfessors[profID] = true;
     if (professorCredits[profID] > 0) {
     CURRENTPROFUNDERLOADED:
@@ -438,7 +457,7 @@ string Chromosome::shiftSectionToOverloaded(int target, int parentID, int profID
             }
         }
         if (DEBUG_BALANCEPROFLOAD)
-            cout << "Unable to find a shared section between " << parentID << " and prof " << profID << endl;
+            debug << "Unable to find a shared section between " << parentID << " and prof " << profID << endl;
         if (professorCredits[profID] > 0)
             visitedProfessors[profID] = false;
         return "";
@@ -491,7 +510,7 @@ string Chromosome::shiftSectionToOverloaded(int target, int parentID, int profID
 /// <returns></returns>
 string Chromosome::shiftSectionToUnderloaded(int target, int parentID, int profID, int ** sectionProf, int ** profSection, int *** associatedProfessors) {
     if (DEBUG_BALANCEPROFLOAD)
-        cout << "Shift Section with parent: " << parentID << " and prof " << profID << endl;
+        debug << "Shift Section with parent: " << parentID << " and prof " << profID << endl;
     visitedProfessors[profID] = true;
     if (professorCredits[profID] < 0) {
     CURRENTPROFOVERLOADED:
@@ -506,7 +525,7 @@ string Chromosome::shiftSectionToUnderloaded(int target, int parentID, int profI
             }
         }
         if (DEBUG_BALANCEPROFLOAD)
-            cout << "Unable to find a shared section between " << parentID << " and prof " << profID << endl;
+            debug << "Unable to find a shared section between " << parentID << " and prof " << profID << endl;
         if (professorCredits[profID] < 0)
             visitedProfessors[profID] = false;
         return "";
@@ -557,10 +576,11 @@ string Chromosome::shiftSectionToUnderloaded(int target, int parentID, int profI
 void Chromosome::balanceProfLoad(int ** sectionProf, int ** profSection, int *** associatedProfessors)
 {
     int prevProfBalancedCount = 0;
-    int currentProfBalancedCount = 0;
+    int currentProfBalancedCount = prof_count;
     int * profBackupList = new int[section_count];
     int tries = 0;
     do {
+        debug << "Current balancing try: " << tries << endl << endl;
         for (int i = 0; i < section_count; ++i) {
             profBackupList[i] = getProf(i);
         }
@@ -573,13 +593,13 @@ void Chromosome::balanceProfLoad(int ** sectionProf, int ** profSection, int ***
                 visitedProfessors = new bool[prof_count]();
                 visitedProfessors[profID] = true;
                 if (DEBUG_BALANCEPROFLOAD)
-                    cout << "Starting with " << profID;
+                    debug << "Starting with " << profID;
                 //Go through the associates to find a professor that can transfer classes.
                 while (professorCredits[profID] < DELTA_MAX) {
                     int associateIndex = 1;
                     for (; associateIndex <= associatedProfessors[profID][0][0] && professorCredits[profID] < DELTA_MAX; ++associateIndex) {
                         if (DEBUG_BALANCEPROFLOAD)
-                            cout << " Associate: " << associatedProfessors[profID][associateIndex][0] << endl;
+                            debug << " Associate: " << associatedProfessors[profID][associateIndex][0] << endl;
                         bool good = false;
                         for (int x = 2; x <= associatedProfessors[profID][associateIndex][1] + 1; ++x) {
                             if (getProf(associatedProfessors[profID][associateIndex][x]) == profID) {
@@ -607,9 +627,9 @@ void Chromosome::balanceProfLoad(int ** sectionProf, int ** profSection, int ***
                 delete[] visitedProfessors;
                 if (DEBUG_BALANCEPROFLOAD) {
                     if (professorCredits[profID] < DELTA_MAX)
-                        cout << "Unable to balance " << profID << " :(" << endl;
+                        debug << "Unable to balance " << profID << " :(" << endl;
                     else
-                        cout << profID << " balanced. :)" << endl;
+                        debug << profID << " balanced. :)" << endl;
                 }
             }
             else if (professorCredits[profID] > DELTA_MIN) {
@@ -617,14 +637,14 @@ void Chromosome::balanceProfLoad(int ** sectionProf, int ** profSection, int ***
                 visitedProfessors = new bool[prof_count]();
                 visitedProfessors[profID] = true;
                 if (DEBUG_BALANCEPROFLOAD)
-                    cout << "Starting with " << profID;
+                    debug << "Starting with " << profID;
 
                 //Go through the associates to find a professor that can transfer classes.
                 while (professorCredits[profID] > DELTA_MIN) {
                     int associateIndex = 1;
                     for (; associateIndex <= associatedProfessors[profID][0][0] && professorCredits[profID] > DELTA_MIN; ++associateIndex) {
                         if (DEBUG_BALANCEPROFLOAD)
-                            cout << " Associate: " << associatedProfessors[profID][associateIndex][0] << endl;
+                            debug << " Associate: " << associatedProfessors[profID][associateIndex][0] << endl;
                         string sectionToShift = shiftSectionToUnderloaded(profID, profID, associatedProfessors[profID][associateIndex][0], sectionProf, profSection, associatedProfessors);
                         if (sectionToShift.empty())
                             continue;
@@ -642,9 +662,9 @@ void Chromosome::balanceProfLoad(int ** sectionProf, int ** profSection, int ***
                 delete[] visitedProfessors;
                 if (DEBUG_BALANCEPROFLOAD) {
                     if (professorCredits[profID] > DELTA_MIN)
-                        cout << "Unable to balance " << profID << " :(" << endl;
+                        debug << "Unable to balance " << profID << " :(" << endl;
                     else
-                        cout << profID << " balanced. :)" << endl;
+                        debug << profID << " balanced. :)" << endl;
                 }
             }
         }
@@ -682,6 +702,7 @@ bool Chromosome::professorsBalanced() {
 void Chromosome::repair(int * sortedSectionList, bool ** incompatibleSectionsMatrix, bool ** timeslotConflict, int ** sectionTimeslot, int ** sectionProf, int ** profSection, int *** associatedProfessors) {
     int retry = 0;
     do {
+        debug << "Repair try: " << retry << endl;
         balanceProfLoad(sectionProf, profSection, associatedProfessors);
         bool ** sectionTimeTabooList = new bool*[section_count];
         for (int i = 0; i < section_count; ++i) {
@@ -709,7 +730,8 @@ void Chromosome::repair(int * sortedSectionList, bool ** incompatibleSectionsMat
             delete[] sectionTimeTabooList[i];
         }
         delete[] sectionTimeTabooList;
-        validate(incompatibleSectionsMatrix, timeslotConflict, false);
+        validate(incompatibleSectionsMatrix, timeslotConflict);
+        debug << "Validity: " << endl << validateVerbose(incompatibleSectionsMatrix, timeslotConflict);
     } while (!valid && ++retry < REPAIR_MAX);
 }
 
@@ -775,7 +797,7 @@ void Chromosome::optimize(int ** sectionProf, int ** sectionTimeslot, Helper * h
                             setProf(sectionIdx, profToSwapWith);
                             setProf(newSectionIdx, currentProf);
                             //check valid
-                            validate(incompatibleSectionsMatrix, timeslotConflict, false);
+                            validate(incompatibleSectionsMatrix, timeslotConflict);
                             updateFitness(incompatibleSectionsMatrix, sectionPref, profPref, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
                             //Check if swap was valid and it is better fitness
                             if (!valid && fitness > startingFitness) {
@@ -806,7 +828,7 @@ void Chromosome::optimize(int ** sectionProf, int ** sectionTimeslot, Helper * h
 /// <param name="incompatibleSectionsMatrix">The incompatible sections matrix.</param>
 /// <param name="timeslotConflict">The timeslot conflict.</param>
 /// <param name="verbose">if set to <c>true</c>, prints the invalidities.</param>
-void Chromosome::validate(bool ** incompatibleSectionsMatrix, bool ** timeslotConflict, bool verbose) {
+void Chromosome::validate(bool ** incompatibleSectionsMatrix, bool ** timeslotConflict) {
     valid = true;
     bool localValid = true;
     /*
@@ -819,9 +841,6 @@ void Chromosome::validate(bool ** incompatibleSectionsMatrix, bool ** timeslotCo
             cout << "Prof " << pr << " is with " << getCourseLoad(pr);
         }
         if (!(getCourseLoad(pr) >= DELTA_MAX && getCourseLoad(pr) <= DELTA_MIN)) {
-            if (verbose) {
-                cout << pr << " UNBALANCED with " << getCourseLoad(pr) << endl;
-            }
             valid = false;
             localValid = false;
         }
@@ -837,8 +856,6 @@ void Chromosome::validate(bool ** incompatibleSectionsMatrix, bool ** timeslotCo
         for (int right = left + 1; right < section_count && valid; ++right) {
             int rightProf = getProf(right);
             if (leftProf == rightProf && timeslotConflict[getTime(left)][getTime(right)]) {
-                if (verbose)
-                    cout << "Incompatible Prof: " << left << " with " << right << endl;
                 valid = false;
                 localValid = false;
                 break;
@@ -854,8 +871,43 @@ void Chromosome::validate(bool ** incompatibleSectionsMatrix, bool ** timeslotCo
                 continue;
             int rightTime = getTime(right);
             if (leftTime == rightTime) {
-                if (verbose)
-                    cout << "Incompatible Sections: " << left << " with " << right - 1 << endl;
+                valid = false;
+                localValid = false;
+                break;
+            }
+        }
+    }
+}
+
+string Chromosome::validateVerbose(bool ** incompatibleSectionsMatrix, bool ** timeslotConflict) {
+    valid = true;
+    bool localValid = true;
+    stringstream ss;
+    /*
+    First, I will try to ensure that a professor is not scheduled twice at the same timeID.
+    Then, I will look to ensure that no incompatible classes are scheduled at the same timeID.
+    */
+
+    for (int pr = 0; pr < prof_count && valid; pr++) {
+        if (!(getCourseLoad(pr) >= DELTA_MAX && getCourseLoad(pr) <= DELTA_MIN)) {
+            ss << 'p' << pr << " UNBALANCED with " << getCourseLoad(pr) << endl;
+
+            valid = false;
+            localValid = false;
+        }
+        else {
+            if (DEBUG_VALIDATE) {
+                cout << endl;
+            }
+        }
+    }
+
+    for (int left = 0; left < section_count && valid; ++left) {
+        int leftProf = getProf(left);
+        for (int right = left + 1; right < section_count && valid; ++right) {
+            int rightProf = getProf(right);
+            if (leftProf == rightProf && timeslotConflict[getTime(left)][getTime(right)]) {
+                ss << "Incompatible Prof: p" << left << " with p" << right << endl;
                 valid = false;
                 localValid = false;
                 break;
@@ -863,10 +915,27 @@ void Chromosome::validate(bool ** incompatibleSectionsMatrix, bool ** timeslotCo
         }
     }
 
-    if (verbose) {
-        cout << "Validation result: " << localValid << endl;
+    for (int left = 0; left < section_count && valid; ++left) {
+        int leftTime = getTime(left);
+        for (int right = left + 1; right < section_count && valid; ++right) {
+            if (!incompatibleSectionsMatrix[left][right])
+                continue;
+            int rightTime = getTime(right);
+            if (leftTime == rightTime) {
+                ss << "Incompatible Sections: s" << left << " with s" << right << endl;
+                valid = false;
+                localValid = false;
+                break;
+            }
+        }
     }
+
+
+    ss << "Validation result: " << localValid << endl;
+
+    return ss.str();
 }
+
 
 /// <summary>
 /// Updates the fitness.
@@ -1008,7 +1077,7 @@ string Chromosome::printProfTable() {
     double * profSum = new double[prof_count]();
 
     for (int i = 0; i < prof_count; ++i) {
-        profs[i] = (i < 10 ? " " : "") + to_string(i) + " ["
+        profs[i] = (i < 10 ? " p" : "p") + to_string(i) + " ["
             + (professorCredits[i] < 0 ? "" : " ")
             + Utility::FormatDouble(professorCredits[i], 2) + "," + Utility::FormatDouble(professorCreditsInitial[i], 2) + "]: ";
         if (professorCredits[i] < DELTA_MAX || professorCredits[i] > DELTA_MIN)
@@ -1027,6 +1096,8 @@ string Chromosome::printProfTable() {
         ss << profs[i];
         if (DEBUG_PROF_LOAD)
             ss << " & " << profsCourseCredit[i] << " = " << profSum[i] << "(" << (professorCreditsInitial[i] - profSum[i]) << ")" << endl;
+        else
+            ss << endl;
     }
     delete[] profs;
     delete[] profsCourseCredit;

@@ -1,24 +1,9 @@
-﻿Build started 12/27/2014 6:04:53 AM.
-     1>Project "C:\Users\Siddharth\Documents\GitHub\Masters_Thesis_Backend\Scheduling_Backend\Scheduling_Backend\Scheduling_Backend.vcxproj" on node 2 (Build target(s)).
-     1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc140.pdb" /Gd /TP /analyze- /errorReport:prompt Population.cpp
-         Population.cpp
-     1>c:\users\siddharth\documents\github\masters_thesis_backend\scheduling_backend\scheduling_backend\population.cpp(826): warning C4456: declaration of 'i' hides previous local declaration
-         c:\users\siddharth\documents\github\masters_thesis_backend\scheduling_backend\scheduling_backend\population.cpp(747): note: see declaration of 'i'
-     1>c:\users\siddharth\documents\github\masters_thesis_backend\scheduling_backend\scheduling_backend\population.cpp(916): warning C4456: declaration of 'i' hides previous local declaration
-         c:\users\siddharth\documents\github\masters_thesis_backend\scheduling_backend\scheduling_backend\population.cpp(853): note: see declaration of 'i'
-     1>c:\users\siddharth\documents\github\masters_thesis_backend\scheduling_backend\scheduling_backend\population.cpp(944): warning C4456: declaration of 'i' hides previous local declaration
-         c:\users\siddharth\documents\github\masters_thesis_backend\scheduling_backend\scheduling_backend\population.cpp(853): note: see declaration of 'i'
-       Link:
-         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Siddharth\Documents\GitHub\Masters_Thesis_Backend\Scheduling_Backend\Debug\Scheduling_Backend.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /Debug /PDB:"C:\Users\Siddharth\Documents\GitHub\Masters_Thesis_Backend\Scheduling_Backend\Debug\Scheduling_Backend.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Siddharth\Documents\GitHub\Masters_Thesis_Backend\Scheduling_Backend\Debug\Scheduling_Backend.lib" /MACHINE:X86 Debug\Chromosome.obj
-         Debug\Gene.obj
-         Debug\getCPUTime.obj
-         Debug\Population.obj
-         Debug\Scheduler.obj
-         Debug\TimeSlot.obj
-         Scheduling_Backend.vcxproj -> C:\Users\Siddharth\Documents\GitHub\Masters_Thesis_Backend\Scheduling_Backend\Debug\Scheduling_Backend.exe
-     1>Done Building Project "C:\Users\Siddharth\Documents\GitHub\Masters_Thesis_Backend\Scheduling_Backend\Scheduling_Backend\Scheduling_Backend.vcxproj" (Build target(s)).
+﻿Build started 2/5/2015 3:23:51 PM.
+     1>Project "C:\Users\Siddharth\Source\Repos\Masters_Thesis_Backend\Scheduling_Backend\Scheduling_Backend\Scheduling_Backend.vcxproj" on node 2 (Build target(s)).
+     1>Link:
+         Scheduling_Backend.vcxproj -> C:\Users\Siddharth\Source\Repos\Masters_Thesis_Backend\Scheduling_Backend\Debug\Scheduling_Backend.exe
+     1>Done Building Project "C:\Users\Siddharth\Source\Repos\Masters_Thesis_Backend\Scheduling_Backend\Scheduling_Backend\Scheduling_Backend.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:01.42
+Time Elapsed 00:00:00.22

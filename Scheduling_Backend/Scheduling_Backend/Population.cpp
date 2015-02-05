@@ -30,7 +30,7 @@ THE SOFTWARE.
 #include "Population.h"
 
 Population::Population(string dataFilePath) :
-    REPAIR_TRIES(50) {
+REPAIR_TRIES(50) {
     data_file_path = dataFilePath;
     population_size = 0;
     generation_count = 0;
@@ -723,7 +723,7 @@ void Population::readInitialSchedule(ifstream &inFile) {
             tokenizedVersion = Utility::Tokenize(currLine, ',');
             int geneLocation = stoi(tokenizedVersion.at(0));
             Gene current(stoi(tokenizedVersion.at(1)), stoi(tokenizedVersion.at(2)));
-            individuals[0]->setGene(geneLocation, current);            
+            individuals[0]->setGene(geneLocation, current);
         }
         //individuals[0]->updateProfLoad(sectionCredit);
         if (DEBUG_INIT)
@@ -873,6 +873,7 @@ bool Population::allValid() {
 void Population::Evolve() {
     stringstream invalidCountSS;
     int currentGeneration = 1;
+    //int threshold_generation = generation_count;
     int threshold_generation = (int)((double)generation_count * 0.25);
     cout << "Total generations to evolve over: " << generation_count << endl;
     cout << "Threshold for invalid individuals " << threshold_generation << endl;
@@ -908,7 +909,12 @@ void Population::Evolve() {
             debug << "Sacrifice: " << endl << child->print() << "Source: " << endl << individuals[parentID]->print() << endl;
         }
 
-        child->evolve(sortedSectionList, sectionProf, sectionTimeslot, &h, mutation_probability, incompatibleSectionsMatrix, timeslotConflict, credit_count, profSection, associatedProfessors, sectionPref, profPref, timeslotDaytime, timeslotConsecutive, timeslotSpread);
+        if (DEBUG_EVOLVE) {
+            debug << child->evolveVerbose(sortedSectionList, sectionProf, sectionTimeslot, &h, mutation_probability, incompatibleSectionsMatrix, timeslotConflict, credit_count, profSection, associatedProfessors, sectionPref, profPref, timeslotDaytime, timeslotConsecutive, timeslotSpread);
+        }
+        else {
+            child->evolve(sortedSectionList, sectionProf, sectionTimeslot, &h, mutation_probability, incompatibleSectionsMatrix, timeslotConflict, credit_count, profSection, associatedProfessors, sectionPref, profPref, timeslotDaytime, timeslotConsecutive, timeslotSpread);
+        }
         if (DEBUG_EVOLVE)
             debug << child->printProfTable();
         int diffCount = child->DifferenceCount(individuals[parentID]);
