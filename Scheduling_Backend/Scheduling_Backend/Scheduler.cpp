@@ -42,9 +42,20 @@ int main(int argc, char* argv[] ) {
     
     int suffix_cntr = 0;
     string prepend(argv[2]);
+    string inputFile(argv[1]);
+    string destinationFolder(argv[2]);
+    char hostnameCharArray[128];
+    gethostname(hostnameCharArray, sizeof hostnameCharArray);
+    
+    string hostname(hostnameCharArray);
+		cout << "Hostname: " << hostname << endl;
+
     if(prepend.back() != '/'){
     	prepend += "/";
+    	destinationFolder += "/";
     }
+   	prepend += hostname + "-";
+   	destinationFolder += hostname + "-";
    	prepend += "stat";
     
     if(!(stat(argv[2], &info) == 0 && info.st_mode && S_IFDIR)){
@@ -56,9 +67,6 @@ int main(int argc, char* argv[] ) {
         suffix_cntr++;
     }
      
-    string inputFile(argv[1]);
-    string destinationFolder(argv[2]);
-
     double startTime, endTime;
     startTime = getCPUTime( );
     
