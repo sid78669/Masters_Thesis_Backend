@@ -29,9 +29,10 @@ THE SOFTWARE.
 
 #include "Population.h"
 
-Population::Population(string dataFilePath) :
+Population::Population(string dataFilePath, string destinationFolder, int suffixCounter) :
 REPAIR_TRIES(50) {
     data_file_path = dataFilePath;
+    destination_folder = destinationFolder;
     population_size = 0;
     generation_count = 0;
     replacement_wait = 0;
@@ -42,15 +43,10 @@ REPAIR_TRIES(50) {
     professor_count = 0;
     credit_count = 0;
     timeslot_count = 0;
-    suffix_cntr = 0;
-
-    while (std::ifstream("stat" + to_string(suffix_cntr) + ".txt")) {
-        suffix_cntr++;
-    }
-
-    string statFilePath = "stat" + to_string(suffix_cntr) + ".txt";
-    string debugFilePath = "debug" + to_string(suffix_cntr) + ".txt";
-    string outputFilePath = "output" + to_string(suffix_cntr) + ".txt";
+    suffix_cntr = suffixCounter;
+    string statFilePath = destination_folder + "stat" + to_string(suffix_cntr) + ".txt";
+    string debugFilePath = destination_folder + "debug" + to_string(suffix_cntr) + ".txt";
+    string outputFilePath = destination_folder + "output" + to_string(suffix_cntr) + ".txt";
     statFile.open(statFilePath.c_str(), ofstream::out);
     cout << "Stat file: " << statFilePath << endl;
     statFile << "Random Seed: " << h.seed << endl;
@@ -65,6 +61,130 @@ REPAIR_TRIES(50) {
 } //end Constructor
 
 Population::~Population() {
+		if(incompatibleSectionsMatrix){
+			for(int i = 0; i < section_count; ++i){
+				delete [] incompatibleSectionsMatrix[i];
+			}
+			delete [] incompatibleSectionsMatrix;
+		}
+		
+		if(sectionCredit){
+			delete [] sectionCredit;
+		}
+		
+		if(profCreditMax){
+			delete [] profCreditMax;
+		}
+		
+		if(sectionProf){
+			for(int i = 0; i < section_count; ++i){
+				delete [] sectionProf[i];
+			}
+			
+			delete [] sectionProf;
+		}
+		
+		if(profSection){
+			for(int i = 0; i < professor_count; ++i){
+				delete [] profSection[i];
+			}
+			
+			delete [] profSection;
+		}
+		
+		if(sectionTimeslot){
+			for(int i = 0; i < section_count; ++i){
+				delete [] sectionTimeslot[i];
+			}
+			
+			delete [] sectionTimeslot;
+		}
+		
+		if(sectionPref){
+			for(int i = 0; i < section_count; ++i){
+				delete [] sectionPref[i];
+			}
+			
+			delete [] sectionPref;
+		}	
+
+		if(profPref){
+			for(int i = 0; i < professor_count; ++i){
+				delete [] profPref[i];
+			}
+			
+			delete [] profPref;
+		}
+		
+		if(associatedProfessors){
+			for (int i = 0; i < professor_count; ++i) {
+        for (int j = associatedProfessors[i][0][0] - 1; j >= 0; --j) {
+            delete[] associatedProfessors[i][j];
+        }
+        delete[] associatedProfessors[i];
+		  }
+		  delete[] associatedProfessors;
+		}
+		
+		if(timeCredLegend){
+			delete [] timeCredLegend;
+		}
+		
+		if(creditTimeSlot){
+			for(int i = 0; i < credit_count; ++i){
+				delete [] creditTimeSlot[i];
+			}
+			
+			delete [] creditTimeSlot;
+		}
+		
+		if(timeCredits){
+			delete [] timeCredits;
+		}
+		
+		if(timeslotDaytime){
+			for(int i = 0; i < timeslot_count; ++i){
+				delete [] timeslotDaytime[i];
+			}
+			
+			delete [] timeslotDaytime;
+		}
+		
+		if(timeslotConflict){
+			for(int i = 0; i < timeslot_count; ++i){
+				delete [] timeslotConflict[i];
+			}
+			
+			delete [] timeslotConflict;
+		}
+		
+		if(timeslotConsecutive){
+			for(int i = 0; i < timeslot_count; ++i){
+				delete [] timeslotConsecutive[i];
+			}
+			
+			delete [] timeslotConsecutive;
+		}
+		
+		if(timeslotSpread){
+			for(int i = 0; i < timeslot_count; ++i){
+				delete [] timeslotSpread[i];
+			}
+			
+			delete [] timeslotSpread;
+		}
+		
+		if(sortedSectionList){
+			delete [] sortedSectionList;
+		}
+		
+		if(individuals){
+			for(int i = 0; i < population_size; ++i){
+				delete individuals[i];
+			}
+			delete [] individuals;
+		}
+		
     if (statFile.is_open())
         statFile.close();
 
@@ -74,97 +194,10 @@ Population::~Population() {
     if (outputFile.is_open())
         outputFile.close();
 
-    if (individuals) {
-        for (int i = 0; i < population_size; ++i) {
-            delete individuals[i];
-        }
-        delete[] individuals;
-    }
-
-    if (timeslotDaytime) {
-        for (int i = 0; i < timeslot_count; ++i) {
-            delete timeslotDaytime[i];
-        }
-        delete[] timeslotDaytime;
-    }
-
-    if (timeslotConflict) {
-        for (int i = 0; i < timeslot_count; ++i) {
-            delete timeslotConflict[i];
-        }
-        delete[] timeslotConflict;
-    }
-
-    if (timeslotConsecutive) {
-        for (int i = 0; i < timeslot_count; ++i) {
-            delete timeslotConsecutive[i];
-        }
-        delete[] timeslotConsecutive;
-    }
-
-    if (timeslotSpread) {
-        for (int i = 0; i < timeslot_count; ++i) {
-            delete timeslotSpread[i];
-        }
-        delete[] timeslotSpread;
-    }
-
-    delete[] sortedSectionList;
-    delete[] timeCredits;
-
-    if (incompatibleSectionsMatrix) {
-        for (int i = 0; i < section_count; ++i) {
-            delete[] incompatibleSectionsMatrix[i];
-        } //end for
-        delete[] incompatibleSectionsMatrix;
-    }
-
-    for (int i = 0; i < credit_count; ++i) {
-        delete[] creditTimeSlot[i];
-    }
-
-    delete[] creditTimeSlot;
-
-    for (int i = 0; i < section_count; ++i) {
-        delete[] sectionProf[i];
-    }
-
-    delete[] sectionProf;
-
-    delete[] sectionCredit;
-
-    for (int i = 0; i < section_count; ++i) {
-        delete[] sectionPref[i];
-    }
-
-    delete[] sectionPref;
-
-    for (int i = 0; i < professor_count; ++i) {
-        delete[] profPref[i];
-    }
-
-    delete[] profPref;
-
-    for (int i = 0; i < professor_count; ++i) {
-        delete[] profSection[i];
-    }
-    delete[] profSection;
-
-    delete[] profCreditMax;
-
-    delete[] timeCredLegend;
-
-    for (int i = 0; i < professor_count; ++i) {
-        for (int j = associatedProfessors[i][0][0] - 1; j >= 0; --j) {
-            delete[] associatedProfessors[i][j];
-        }
-        delete[] associatedProfessors[i];
-    }
-    delete[] associatedProfessors;
+    
 } //end destructor
 
 void Population::readDatFiles() {
-    //vector<string> courses;
 
     ifstream inFile(data_file_path);
 
@@ -193,7 +226,6 @@ void Population::readDatFiles() {
     timeslotSpread = new bool*[timeslot_count];
     timeCredits = new double[timeslot_count];
 
-    //timeSlots = new TimeSlot*[ timeslot_count ]; //timeslot array
     individuals = new Chromosome*[population_size]; //Population array
 
     readSectionList(inFile); //Read section list
@@ -209,13 +241,13 @@ void Population::readDatFiles() {
     readCreditTimeslot(inFile); //Read the creditTimeslot array
     readTimeSlotList(inFile); //Read the timeslot list
     readInitialSchedule(inFile); //Read the initial schedule
-
+		readKey(inFile); //Read the key
     inFile.close();
     vector<int> tempSortedSectionList;
     for (int i = 0; i < section_count; i++) {
         tempSortedSectionList.push_back(i);
     }
-    //sort(tempSortedSectionList.begin( ), tempSortedSectionList.end( ), bind(&Population::sortByProfessorCount, this, std::placeholders::_1, std::placeholders::_2));
+    
     sort(tempSortedSectionList.begin(), tempSortedSectionList.end(), bind(&Population::sortByTimeslotCount, this, std::placeholders::_1, std::placeholders::_2));
 
     for (int i = 0; i < section_count; ++i) {
@@ -260,11 +292,10 @@ void Population::readDatFiles() {
 
 
     cout << endl << "Initial Setup Complete" << endl << endl;
-    statFile << "Generation,";// Replaced, ";
-    /*for(int x = 0; x < population_size; ++x) {
+    statFile << "Generation,";
+    for(int x = 0; x < population_size; ++x) {
         statFile << to_string(x) << ",";
-    }*/
-
+    }
     statFile << "Mean, SD;" << endl;
 
     statFile << "0," << GetFitnessData() << endl;
@@ -289,6 +320,7 @@ bool Population::sortByTimeslotCount(int i, int j) {
 void Population::prepareDataStatistics() {
     int min = section_count, max = 0, total = 0;
     double mean = 0.0;
+    
     //Get min, max, mean incompatible associates per section
     for (int index = 0; index < section_count; ++index) {
         int currentIncomps = 0;
@@ -365,7 +397,7 @@ void Population::prepareDataStatistics() {
             max = creditTimeSlot[timeIndex][0];
         }
     }
-    mean = (double)total / (double)credit_count;
+    mean = (double)total / (double)section_count;
     statFile << "Timeslots per Section: " << endl;
     statFile << "Range: [" << min << "," << max << "]" << endl;
     statFile << "Mean: " << fixed << setprecision(2) << mean << endl << endl;
@@ -404,6 +436,23 @@ void Population::readParameters(ifstream &inFile) {
 
         getline(inFile, currLine);
     }
+}
+
+void Population::readKey(ifstream &inFile) {
+    cout << "Starting reading key..." << endl;
+
+    string currLine;
+    if (inFile.is_open()) {
+        while (getline(inFile, currLine)) {
+            if (currLine[0] == '/')
+                continue;
+            if (currLine.compare("*END*KEY*") == 0)
+                break;
+            key << currLine << endl;
+        } //end while
+    } //end if
+
+    statFile << "New Sections Added: " << section_count << endl;
 }
 
 /*
@@ -569,7 +618,7 @@ void Population::readSectionTimeslotList(ifstream &inFile) {
             tokenizedVersion = Utility::Tokenize(currLine, ',');
             int section = stoi(tokenizedVersion[0]);
             int timeslots = stoi(tokenizedVersion[1]);
-            sectionTimeslot[section] = new int[timeslots + 1];
+            sectionTimeslot[section] = new int[(signed) (timeslots + 1)];
             sectionTimeslot[section][0] = timeslots;
             if (timeslots > 0) {
                 for (int x = 1; x < timeslots + 1; ++x) {
@@ -663,7 +712,9 @@ void Population::readTimeSlotList(ifstream &inFile) {
             int timeslotID = stoi(tokenizedVersion.at(0));
             double creds = stod(tokenizedVersion.at(1));
             timeCredits[timeslotID] = creds;
-            int isMorning = stoi(tokenizedVersion.at(2)), isAfternoon = stoi(tokenizedVersion.at(3)), isEvening = stoi(tokenizedVersion.at(4));
+            int isMorning = stoi(tokenizedVersion.at(2)), 
+            		isAfternoon = stoi(tokenizedVersion.at(3)), 
+            		isEvening = stoi(tokenizedVersion.at(4));
             string overlap = tokenizedVersion.at(5);
             string consecutive = tokenizedVersion.at(6);
             string spreadout = tokenizedVersion.at(7);
@@ -722,10 +773,12 @@ void Population::readInitialSchedule(ifstream &inFile) {
 
             tokenizedVersion = Utility::Tokenize(currLine, ',');
             int geneLocation = stoi(tokenizedVersion.at(0));
-            Gene current(stoi(tokenizedVersion.at(1)), stoi(tokenizedVersion.at(2)));
-            individuals[0]->setGene(geneLocation, current);
+            //Gene current(stoi(tokenizedVersion.at(1)), stoi(tokenizedVersion.at(2)));
+            //individuals[0]->setGene(geneLocation, current);
+            individuals[0]->setProf(geneLocation, stoi(tokenizedVersion.at(1)));
+            individuals[0]->setTime(geneLocation, stoi(tokenizedVersion.at(2)));
         }
-        //individuals[0]->updateProfLoad(sectionCredit);
+
         if (DEBUG_INIT)
             debug << individuals[0]->print() << endl;
     }
@@ -747,7 +800,7 @@ void Population::initPopulationFromFirst() {
     mutation_probability = 10;
     int len = to_string(population_size).length();
     cout << "Generating individual : ";
-
+		cout.flush();
     for (int i = 1; i < population_size; ++i) {
 
         if (i == 0) {
@@ -759,6 +812,8 @@ void Population::initPopulationFromFirst() {
             }
             cout << setw(len) << to_string(i + 1);
         }
+        cout.flush();
+        
         individuals[i] = new Chromosome(individuals[0]);
         if (DEBUG_INIT_POPULATION_COMPARED)
             debug << "Pre-Mutation: " << endl << individuals[i]->print();
@@ -878,6 +933,7 @@ void Population::Evolve() {
     cout << "Total generations to evolve over: " << generation_count << endl;
     cout << "Threshold for invalid individuals " << threshold_generation << endl;
     cout << "Current Generation: ";
+    cout.flush();
     int len = to_string(generation_count).length();
     bool validityConfirmed = false;
     int generationOfFullValidity = generation_count + 1;
@@ -895,7 +951,7 @@ void Population::Evolve() {
             }
             cout << setw(len) << to_string(currentGeneration);
         }
-
+				cout.flush();
 
         int parentID = getWeightedRandomIndividual();
         if (individuals[parentID]->getFitness() < lowestFitnessSeen)
@@ -1009,22 +1065,23 @@ void Population::Evolve() {
     debug << "-----------------" << endl << endl;
     cout << endl << "Ending Generation: " << currentGeneration;
     cout << endl << "Evolution Complete." << endl;
+    cout.flush();
     statFile << currentGeneration << ",";
     statFile << GetFitnessData() << endl;
     statFile << "Population valid at: " << generationOfFullValidity << endl;
 }
 
 string Population::GetFitnessData() {
-    int * allFitness = new int[population_size - 2];
+    int * allFitness = new int[population_size];
     stringstream s;
     for (int i = 0; i < population_size; ++i) {
-        allFitness[i - 1] = individuals[i]->getFitness();
+        allFitness[i] = individuals[i]->getFitness();
         s << individuals[i]->getFitness() << ",";
     }
-    double mean = Utility::CalculateMean(allFitness, population_size - 1);
-    double sd = Utility::StandardDeviation(allFitness, population_size - 1, mean);
+    double mean = Utility::CalculateMean(allFitness, population_size);
+    double sd = Utility::StandardDeviation(allFitness, population_size, mean);
     s << mean << "," << sd;
-    //s << ",\n";
+    delete [] allFitness;
     return s.str();
 }
 
@@ -1039,9 +1096,7 @@ void Population::PrintEnd() {
             outputFile << "Individual " << i << endl;
             fitnessValues[i] = individuals[i]->getFitness();
             outputFile << "Fitnesss: " << fitnessValues[i] << endl;
-            outputFile << "Valid: "
-                << (individuals[i]->isValid() ?
-                "Yes" : "No") << endl;
+            outputFile << "Valid: " << (individuals[i]->isValid() ? "Yes" : "No") << endl;
             outputFile << "*******************************************************"
                 << endl << endl;
         }
@@ -1050,6 +1105,7 @@ void Population::PrintEnd() {
             outputFile << fitnessValues[i] << ",";
         }
         outputFile << fitnessValues[population_size - 1] << endl;
+        delete [] fitnessValues;
     } //if (PRINT_WHOLE_POPULATION)
 
     outputFile << "\n\nStrongest Individual: " << strongestIndividualID << endl;
@@ -1104,6 +1160,7 @@ void Population::PrintEnd() {
             outputFile << individuals[i]->print() << endl;
             outputFile << "Validity: " << (individuals[i]->isValid() ? "Yes" : "No") << endl;
             outputFile << "Fitness: " << individuals[i]->getFitness() << endl;
+            outputFile << "Professor Schedule: " << endl << individuals[i]->printProfTable() << endl;
             outputFile << "*END*SCHEDULE*" << endl;
             cntr++;
         }
@@ -1111,6 +1168,9 @@ void Population::PrintEnd() {
     outputFile << "*END*PRINTING*OTHER*VALID*" << endl;
     outputFile << "Unique Solutions: " << --cntr << endl;
     outputFile << "Done." << endl;
+    outputFile << endl;
+    outputFile << key.str();
+    outputFile << "*END*KEY*" << endl;
     statFile.close();
     //outputFile.close( );
 }

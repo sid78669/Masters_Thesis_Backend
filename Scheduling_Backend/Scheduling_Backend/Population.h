@@ -60,7 +60,7 @@ class Chromosome;
 
 class Population {
 public:
-    Population(string dataFilePath); //Constructor
+    Population(string dataFilePath, string destinationFolder, int suffixCounter); //Constructor
     void Evolve( ); //Evolution 
     void PrintEnd( ); //Final output 
     virtual ~Population( ); //Destructor
@@ -68,6 +68,8 @@ public:
 private:
     //Self-identifying variables.
     string data_file_path;
+    string destination_folder;
+    stringstream key;
     //Ascending order of being read from data file
     int generation_count;
     int population_size;
@@ -90,7 +92,6 @@ private:
     
 
     //Inorder of being read or generated
-    //int ** incompatibleSections; //list of incompatible section for each section
     bool ** incompatibleSectionsMatrix; //Adjacency matrix for incompatible sections.
     double * sectionCredit; //credit value of each section
     double * profCreditMax; //max credits for each professor
@@ -136,6 +137,7 @@ private:
     void readCreditTimeslot(ifstream &input); //Read the creditTimeslot array
     void readTimeSlotList(ifstream &input); //Read the timeslot list
     void readInitialSchedule(ifstream &input); //Read the initial schedule
+    void readKey(ifstream &input); //Read the key
     void initPopulationFromFirst( ); //Create the initial population from the initial schedule
     
     

@@ -29,21 +29,49 @@ THE SOFTWARE.
 
 #include "Population.h"
 #include "getCPUTime.c"
+#include <sys/types.h>
+#include <sys/stat.h>
 
-int main( ) {
+struct stat info;
+
+int main(int argc, char* argv[] ) {
+    if(argc < 3){
+    	cerr << "Invalid number of arguments provided. Input Filename and output destination folder are required." << endl;
+    	exit(-1);
+    }
+    
+    int suffix_cntr = 0;
+    string prepend(argv[2]);
+    if(prepend.back() != '/'){
+    	prepend += "/";
+    }
+   	prepend += "stat";
+    
+    if(!(stat(argv[2], &info) == 0 && info.st_mode && S_IFDIR)){
+    	cout << "(" << argv[2] << ") is not a valid directory. Exiting..." << endl;
+    	exit(-1);
+    }
+    
+    while (std::ifstream( prepend + to_string(suffix_cntr) + ".txt")) {
+        suffix_cntr++;
+    }
+     
+    string inputFile(argv[1]);
+    string destinationFolder(argv[2]);
+
     double startTime, endTime;
     startTime = getCPUTime( );
-    Population p("input.dat");
+    
+    Population p(inputFile, destinationFolder, suffix_cntr);
     p.Evolve( );
     cout << endl << "End Evolution" << endl;
     cout << "*********************************************************************" << endl;
     p.PrintEnd( );
     endTime = getCPUTime( );
     ofstream statFile;
-    string file = "stat" + to_string(p.suffix_cntr) + ".txt";
+    string file = destinationFolder + "/stat" + to_string(suffix_cntr) + ".txt";
     statFile.open(file, ofstream::out | ofstream::app);
     statFile << "CPU time used = " << ( endTime - startTime ) << endl;
     statFile.close( );
     fprintf(stdout, "CPU time used = %lf\n", ( endTime - startTime ));
-    system("pause");
 }

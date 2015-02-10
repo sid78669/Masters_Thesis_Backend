@@ -37,6 +37,7 @@ THE SOFTWARE.
 #define DELTA_MIN 2.0
 #define DEBUG_VALIDATE 0
 #define DEBUG_PROF_LOAD 0
+#define DEBUG_OUTPUT 1
 #define MAXFITNESS 10000
 
 #include "Utility.cpp"
@@ -105,7 +106,6 @@ private:
     bool valid;
     bool * visitedProfessors;
     stringstream debug;
-    //int MAXFITNESS;
 
     bool validProfessorLoad(int profID);
     bool validProfessorLoadChange(int profID, double creditChange);
