@@ -60,7 +60,7 @@ class Chromosome;
 
 class Population {
 public:
-    Population(string dataFilePath, string destinationFolder, int suffixCounter); //Constructor
+    Population(string dataFilePath, string destinationFolder, int suffixCounter, bool _console); //Constructor
     void Evolve( ); //Evolution 
     void PrintEnd( ); //Final output 
     virtual ~Population( ); //Destructor
@@ -70,6 +70,7 @@ private:
     string data_file_path;
     string destination_folder;
     stringstream key;
+    const bool console; //If true, output to console.
     //Ascending order of being read from data file
     int generation_count;
     int population_size;
