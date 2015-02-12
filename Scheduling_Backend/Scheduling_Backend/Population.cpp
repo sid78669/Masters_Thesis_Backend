@@ -29,8 +29,8 @@ THE SOFTWARE.
 
 #include "Population.h"
 
-Population::Population(string dataFilePath, string destinationFolder, int suffixCounter) :
-REPAIR_TRIES(50) {
+Population::Population(string dataFilePath, string destinationFolder, int suffixCounter, bool _console) :
+REPAIR_TRIES(50), console(_console) {
     data_file_path = dataFilePath;
     destination_folder = destinationFolder;
     population_size = 0;
@@ -48,12 +48,18 @@ REPAIR_TRIES(50) {
     string debugFilePath = destination_folder + "debug" + to_string(suffix_cntr) + ".txt";
     string outputFilePath = destination_folder + "output" + to_string(suffix_cntr) + ".txt";
     statFile.open(statFilePath.c_str(), ofstream::out);
-    cout << "Stat file: " << statFilePath << endl;
+    if(console){
+    	cout << "Stat file: " << statFilePath << endl;
+    }
     statFile << "Random Seed: " << h.seed << endl;
     debug.open(debugFilePath.c_str(), ofstream::out);
-    cout << "Debug file: " << debugFilePath << endl;
+    if(console){
+	    cout << "Debug file: " << debugFilePath << endl;
+	  }
     outputFile.open(outputFilePath.c_str(), ofstream::out);
-    cout << "Output file: " << outputFilePath << endl;
+    if(console){
+    	cout << "Output file: " << outputFilePath << endl;
+    }
     //Setup the Individuals array
     readDatFiles();
 
@@ -200,8 +206,9 @@ Population::~Population() {
 void Population::readDatFiles() {
 
     ifstream inFile(data_file_path);
-
-    cout << "Beginning Initial Setup...." << endl << endl;
+		if(console){
+	    cout << "Beginning Initial Setup...." << endl << endl;
+	  }
 
     //Read the parameters
     readParameters(inFile);
@@ -272,7 +279,9 @@ void Population::readDatFiles() {
 
 
     /**** Setup soft constraints ****/
-    cout << endl;
+    if(console){
+	    cout << endl;
+	 	}
     weakestIndividualID = 0;
 
     prepareDataStatistics();
@@ -290,8 +299,9 @@ void Population::readDatFiles() {
             debug << individuals[i]->print();
         } //end for
 
-
-    cout << endl << "Initial Setup Complete" << endl << endl;
+		if(console){
+	    cout << endl << "Initial Setup Complete" << endl << endl;
+	  }
     statFile << "Generation,";
     for(int x = 0; x < population_size; ++x) {
         statFile << to_string(x) << ",";
@@ -439,7 +449,9 @@ void Population::readParameters(ifstream &inFile) {
 }
 
 void Population::readKey(ifstream &inFile) {
-    cout << "Starting reading key..." << endl;
+    if(console){
+	    cout << "Starting reading key..." << endl;
+	  }
 
     string currLine;
     if (inFile.is_open()) {
@@ -459,7 +471,9 @@ void Population::readKey(ifstream &inFile) {
 This method will read the section data file. It will then add the list of courses it finds to the vector.
 */
 void Population::readSectionList(ifstream &inFile) {
-    cout << "Starting reading sections..." << endl;
+    if(console){
+	    cout << "Starting reading sections..." << endl;
+	  }
 
     string currLine;
     vector<string> tokenizedVersion;
@@ -488,7 +502,9 @@ void Population::readSectionList(ifstream &inFile) {
 } //end readSectionList
 
 void Population::readSectionCreditList(ifstream &inFile) {
-    cout << "Starting reading section credits..." << endl;
+    if(console){
+	    cout << "Starting reading section credits..." << endl;
+	  }
     string currLine;
     vector<string> tokenizedVersion;
     if (inFile.is_open()) {
@@ -508,7 +524,9 @@ void Population::readSectionCreditList(ifstream &inFile) {
 } //end readSectionCreditList
 
 void Population::readTimeCreditLegend(ifstream &inFile) {
-    cout << "Starting reading time credit legend..." << endl;
+    if(console){
+	    cout << "Starting reading time credit legend..." << endl;
+	  }
     string currLine;
     vector<string> tokenizedVersion;
     if (inFile.is_open()) {
@@ -528,7 +546,9 @@ void Population::readTimeCreditLegend(ifstream &inFile) {
 } //end readTimeCreditLegend
 
 void Population::readProfessorCreditList(ifstream &inFile) {
-    cout << "Starting reading professor credits..." << endl;
+    if(console){
+	    cout << "Starting reading professor credits..." << endl;
+	  }
     string currLine;
     vector<string> tokenizedVersion;
     if (inFile.is_open()) {
@@ -548,7 +568,9 @@ void Population::readProfessorCreditList(ifstream &inFile) {
 } //end readProfessorCreditList
 
 void Population::readCreditTimeslot(ifstream &inFile) {
-    cout << "Starting reading professor per sections..." << endl;
+    if(console){
+	    cout << "Starting reading professor per sections..." << endl;
+	  }
 
     string currLine;
     vector<string> tokenizedVersion;
@@ -575,8 +597,10 @@ void Population::readCreditTimeslot(ifstream &inFile) {
 } //end readCreditTimeslot
 
 void Population::readSectionProfessorList(ifstream &inFile) {
-    cout << "Starting reading professor per sections..." << endl;
-
+    if(console){
+	    cout << "Starting reading professor per sections..." << endl;
+		}
+		
     string currLine;
     vector<string> tokenizedVersion;
     if (inFile.is_open()) {
@@ -603,7 +627,9 @@ void Population::readSectionProfessorList(ifstream &inFile) {
 } //end readSectionProfessorList
 
 void Population::readSectionTimeslotList(ifstream &inFile) {
-    cout << "Starting reading timeslots per sections..." << endl;
+    if(console){
+	    cout << "Starting reading timeslots per sections..." << endl;
+	  }
 
     string currLine;
     vector<string> tokenizedVersion;
@@ -631,7 +657,9 @@ void Population::readSectionTimeslotList(ifstream &inFile) {
 } //end readSectionTimeslotList
 
 void Population::readProfessorSectionList(ifstream &inFile) {
-    cout << "Starting reading professor per sections..." << endl;
+    if(console){
+    	cout << "Starting reading professor per sections..." << endl;
+   	}
 
     string currLine;
     vector<string> tokenizedVersion;
@@ -659,7 +687,9 @@ void Population::readProfessorSectionList(ifstream &inFile) {
 } //end readProfessorSectionList
 
 void Population::readAssociatedProfessorList(ifstream &inFile) {
-    cout << "Starting reading professor associate list..." << endl;
+    if(console){
+    	cout << "Starting reading professor associate list..." << endl;
+    }
 
     string currLine;
     vector<string> tokenizedVersion;
@@ -696,7 +726,9 @@ void Population::readAssociatedProfessorList(ifstream &inFile) {
 }
 
 void Population::readTimeSlotList(ifstream &inFile) {
-    cout << "Starting reading TimeSlots" << endl;
+    if(console){
+	    cout << "Starting reading TimeSlots" << endl;
+	  }
 
     vector<string> tokenizedVersion;
     string currLine;
@@ -755,7 +787,9 @@ void Population::readTimeSlotList(ifstream &inFile) {
 } //end readTimeSlotList
 
 void Population::readInitialSchedule(ifstream &inFile) {
-    cout << "Initiating First Chromosome..." << endl;
+    if(console){
+    	cout << "Initiating First Chromosome..." << endl;
+   	}
 
     vector<string> tokenizedVersion;
     string currLine;
@@ -791,28 +825,35 @@ void Population::readInitialSchedule(ifstream &inFile) {
     statFile << "Prof Rating: " << endl << individuals[0]->getProfessorLoads() << endl;
     initFitness = individuals[0]->getFitness();
     statFile << "Initial Schedule Fitness: " << initFitness << endl;
-    cout << "First Chromosome Initialized." << endl;
+    if(console){
+    	cout << "First Chromosome Initialized." << endl;
+    }
 }
 
 void Population::initPopulationFromFirst() {
-    cout << "Initiating generation of population...." << endl;
+    if(console){
+    	cout << "Initiating generation of population...." << endl;
+    }
     int original_mutation_probability = mutation_probability;
     mutation_probability = 10;
     int len = to_string(population_size).length();
-    cout << "Generating individual : ";
-		cout.flush();
+    if(console){
+    	cout << "Generating individual : ";
+			cout.flush();
+		}
     for (int i = 1; i < population_size; ++i) {
-
-        if (i == 0) {
-            cout << setw(len) << "0";
+				if(console){
+		      if (i == 0) {
+		          cout << setw(len) << "0";
+		      }
+		      else {
+		          for (int b = 0; b < len; ++b) {
+		              cout << '\b';
+		          }
+		          cout << setw(len) << to_string(i + 1);
+		      }
+		      cout.flush();
         }
-        else {
-            for (int b = 0; b < len; ++b) {
-                cout << '\b';
-            }
-            cout << setw(len) << to_string(i + 1);
-        }
-        cout.flush();
         
         individuals[i] = new Chromosome(individuals[0]);
         if (DEBUG_INIT_POPULATION_COMPARED)
@@ -833,7 +874,9 @@ void Population::initPopulationFromFirst() {
 
     mutation_probability = original_mutation_probability;
 
-    cout << endl << "Population generated." << endl;
+    if(console){
+    	cout << endl << "Population generated." << endl;
+    }
 }
 
 void Population::readCoursePref(ifstream &inFile) {
@@ -930,10 +973,12 @@ void Population::Evolve() {
     int currentGeneration = 1;
     //int threshold_generation = generation_count;
     int threshold_generation = (int)((double)generation_count * 0.25);
-    cout << "Total generations to evolve over: " << generation_count << endl;
-    cout << "Threshold for invalid individuals " << threshold_generation << endl;
-    cout << "Current Generation: ";
-    cout.flush();
+    if(console){
+		  cout << "Total generations to evolve over: " << generation_count << endl;
+		  cout << "Threshold for invalid individuals " << threshold_generation << endl;
+		  cout << "Current Generation: ";
+		  cout.flush();
+    }
     int len = to_string(generation_count).length();
     bool validityConfirmed = false;
     int generationOfFullValidity = generation_count + 1;
@@ -942,17 +987,19 @@ void Population::Evolve() {
     for (currentGeneration = 0; currentGeneration <= generation_count; ++currentGeneration) {
         if (currentGeneration > 0 && currentGeneration % reduceMutationInterval == 0 && mutation_probability > 1)
             mutation_probability--;
-        if (currentGeneration == 0) {
-            cout << setw(len) << "0";
-        }
-        else /*if (currentGeneration % 100 == 0 || currentGeneration < 100)*/ {
-            for (int b = 0; b < (len /*+ dots*/); ++b) {
-                cout << '\b';
-            }
-            cout << setw(len) << to_string(currentGeneration);
-        }
-				cout.flush();
-
+        if(console){
+		      if (currentGeneration == 0) {
+		          cout << setw(len) << "0";
+		      }
+		      else {
+		          for (int b = 0; b < len; ++b) {
+		              cout << '\b';
+		          }
+		          cout << setw(len) << to_string(currentGeneration);
+		      }
+					cout.flush();
+				}
+				
         int parentID = getWeightedRandomIndividual();
         if (individuals[parentID]->getFitness() < lowestFitnessSeen)
             lowestFitnessSeen = individuals[parentID]->getFitness();
@@ -1063,9 +1110,11 @@ void Population::Evolve() {
     debug << "Invalid Count Data: " << endl;
     debug << invalidCountSS.str() << endl;
     debug << "-----------------" << endl << endl;
-    cout << endl << "Ending Generation: " << currentGeneration;
-    cout << endl << "Evolution Complete." << endl;
-    cout.flush();
+    if(console){
+		  cout << endl << "Ending Generation: " << currentGeneration;
+		  cout << endl << "Evolution Complete." << endl;
+		  cout.flush();
+    }
     statFile << currentGeneration << ",";
     statFile << GetFitnessData() << endl;
     statFile << "Population valid at: " << generationOfFullValidity << endl;
