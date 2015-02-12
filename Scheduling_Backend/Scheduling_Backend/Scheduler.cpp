@@ -31,6 +31,7 @@ THE SOFTWARE.
 #include "getCPUTime.c"
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <string.h>
 
 struct stat info;
 
@@ -43,13 +44,25 @@ int main(int argc, char* argv[] ) {
     int suffix_cntr = 0;
     string prepend(argv[2]);
     string inputFile(argv[1]);
+		if (stat (argv[1], &info) != 0){
+			cerr << "Invalid input file. File does not exist." << endl;
+			exit(-1);
+		}
+    
     string destinationFolder(argv[2]);
+    bool console = false;
+    if(argc == 4 && strcmp(argv[3], "yes") == 0){
+    	cout << "Outputting to Console." << endl;
+    	console = true;
+    }
     char hostnameCharArray[128];
     gethostname(hostnameCharArray, sizeof hostnameCharArray);
     
     string hostname(hostnameCharArray);
-		cout << "Hostname: " << hostname << endl;
-
+		if(console){
+			cout << "Hostname: " << hostname << endl;
+		}
+		
     if(prepend.back() != '/'){
     	prepend += "/";
     	destinationFolder += "/";
@@ -70,10 +83,12 @@ int main(int argc, char* argv[] ) {
     double startTime, endTime;
     startTime = getCPUTime( );
     
-    Population p(inputFile, destinationFolder, suffix_cntr);
+    Population p(inputFile, destinationFolder, suffix_cntr, console);
     p.Evolve( );
-    cout << endl << "End Evolution" << endl;
-    cout << "*********************************************************************" << endl;
+    if(console){
+		  cout << endl << "End Evolution" << endl;
+		  cout << "*********************************************************************" << endl;
+		}
     p.PrintEnd( );
     endTime = getCPUTime( );
     ofstream statFile;
@@ -81,5 +96,7 @@ int main(int argc, char* argv[] ) {
     statFile.open(file, ofstream::out | ofstream::app);
     statFile << "CPU time used = " << ( endTime - startTime ) << endl;
     statFile.close( );
-    fprintf(stdout, "CPU time used = %lf\n", ( endTime - startTime ));
+ 		if(console){
+    	fprintf(stdout, "CPU time used = %lf\n", ( endTime - startTime ));
+    }
 }
