@@ -407,19 +407,19 @@ void Chromosome::mutate(bool ** incompatibleSectionsMatrix, int * sortedSectionL
         compProfs = sectionProf[g][0];
         profID = getProf(g);
 
-        compTimes = sectionTimeslot[idx][0];
+        compTimes = sectionTimeslot[g][0];
         timeID = getTime(g);
 
         int mutationTime = h->randNum(1, 100);
         if (mutationTime <= mutation_probability) {
             if (compTimes != 1) {
                 timeID = h->randNum(1, compTimes);
-                if (sectionTabooList[idx][sectionTimeslot[idx][timeID]])
-                    for (timeID = 1; timeID <= compTimes && sectionTabooList[idx][sectionTimeslot[idx][timeID]]; ++timeID)
+                if (sectionTabooList[g][sectionTimeslot[g][timeID]])
+                    for (timeID = 1; timeID <= compTimes && sectionTabooList[g][sectionTimeslot[g][timeID]]; ++timeID)
                         ;
             } else
                 timeID = 1;
-            setTime(g, sectionTimeslot[idx][timeID]);
+            setTime(g, sectionTimeslot[g][timeID]);
             updateTabooList(incompatibleSectionsMatrix);
         }
 
@@ -433,6 +433,45 @@ void Chromosome::mutate(bool ** incompatibleSectionsMatrix, int * sortedSectionL
                 profID = 1;
         }
     }
+
+    if (DEBUG_MUTATION)
+        cout << "Finished Mutating." << endl;
+}
+
+void Chromosome::fillEmpty(bool ** incompatibleSectionsMatrix, int * sortedSectionList, int ** sectionProf, int ** sectionTimeslot, Helper * h){
+		if (DEBUG_MUTATION)
+        cout << "Mutating Individual... " << endl;
+
+    for (int g = 0; g < section_count; g++) {
+        //If both professor and time values are assigned, continue to the next gene.
+        if(getProf(g) > -1 && getTime(g) > -1){
+        	continue;
+        }
+        
+        //Otherwise, we need to fill data.
+        
+        int timeID = -1, compTimes = -1, profID = -1, compProfs = -1;
+
+        compProfs = sectionProf[g][0];
+        profID = getProf(g);
+
+        compTimes = sectionTimeslot[g][0];
+        timeID = getTime(g);
+
+        if (compTimes != 1) {
+            timeID = h->randNum(1, compTimes);
+        } else
+            timeID = 1;
+        setTime(g, sectionTimeslot[g][timeID]);
+
+        if (compProfs != 1) {
+            profID = h->randNum(1, compProfs);
+        } else
+            profID = 1;
+        setProf(g, sectionProf[g][profID]);
+    }
+    
+    //updateTabooList(incompatibleSectionsMatrix);
 
     if (DEBUG_MUTATION)
         cout << "Finished Mutating." << endl;

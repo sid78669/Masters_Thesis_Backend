@@ -81,6 +81,7 @@ public:
     string evolveVerbose(int * const sortedSectionList, int ** const sectionProf, int ** const sectionTimeslot, Helper * const h, int const mutation_probability, bool ** const incompatibleSectionsMatrix, bool ** const timeslotConflict, int credit_count, int ** const profSection, int *** const associatedProfessors, int ** const sectionPref, int ** const profPref, bool ** const timeslotDaytime, bool ** const timeslotConsecutive, bool ** const timeslotSpread);
     void updateFitness(bool ** incompatibleSectionsMatrix, int ** sectionPref, int ** profPref, bool ** timeslotDaytime, bool ** timeslotConflict, bool ** timeslotConsecutive, bool ** timeslotSpread);
     void updateProfLoad();
+    void fillEmpty(bool ** incompatibleSectionsMatrix, int * sortedSectionList, int ** sectionProf, int ** sectionTimeslot, Helper * h);
     bool isValid();
     bool isValid(bool ** incompatibleSectionsMatrix, bool ** timeslotConflict, bool verbose);
     int DifferenceCount(Chromosome * const parent);

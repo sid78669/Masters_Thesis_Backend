@@ -87,7 +87,8 @@ Population::~Population() {
 				delete [] sectionProf[i];
 			}
 			
-			delete [] sectionProf;
+			if(sectionProf)
+				delete [] sectionProf;
 		}
 		
 		if(profSection){
@@ -644,7 +645,7 @@ void Population::readSectionTimeslotList(ifstream &inFile) {
             tokenizedVersion = Utility::Tokenize(currLine, ',');
             int section = stoi(tokenizedVersion[0]);
             int timeslots = stoi(tokenizedVersion[1]);
-            sectionTimeslot[section] = new int[(signed) (timeslots + 1)];
+            sectionTimeslot[section] = new int[(signed) (timeslots + 2)];
             sectionTimeslot[section][0] = timeslots;
             if (timeslots > 0) {
                 for (int x = 1; x < timeslots + 1; ++x) {
@@ -816,6 +817,10 @@ void Population::readInitialSchedule(ifstream &inFile) {
         if (DEBUG_INIT)
             debug << individuals[0]->print() << endl;
     }
+    //If there are any empty genes, we want to fill them now.
+    individuals[0]->fillEmpty(incompatibleSectionsMatrix, sortedSectionList, sectionProf, sectionTimeslot, &h);
+    
+    //All good, let's update fitness.
     individuals[0]->updateFitness(incompatibleSectionsMatrix, sectionPref, profPref, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
     weakestIndividualID = 0;
     lowestFitnessSeen = individuals[0]->getFitness();
