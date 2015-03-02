@@ -29,8 +29,8 @@ THE SOFTWARE.
 
 #include "Population.h"
 
-Population::Population(string dataFilePath, string destinationFolder, int suffixCounter, bool _console) :
-REPAIR_TRIES(50), console(_console) {
+Population::Population(int deltaValue, string dataFilePath, string destinationFolder, int suffixCounter, bool _console) :
+REPAIR_TRIES(50), console(_console), DELTA(deltaValue) {
     data_file_path = dataFilePath;
     destination_folder = destinationFolder;
     population_size = 0;
@@ -248,8 +248,9 @@ void Population::readDatFiles() {
     readTimeCreditLegend(inFile);// Read time credit legend
     readCreditTimeslot(inFile); //Read the creditTimeslot array
     readTimeSlotList(inFile); //Read the timeslot list
+    initialSchedule = false;
     readInitialSchedule(inFile); //Read the initial schedule
-		readKey(inFile); //Read the key
+    readKey(inFile); //Read the key
     inFile.close();
     vector<int> tempSortedSectionList;
     for (int i = 0; i < section_count; i++) {
@@ -457,7 +458,7 @@ void Population::readKey(ifstream &inFile) {
     string currLine;
     if (inFile.is_open()) {
         while (getline(inFile, currLine)) {
-            if (currLine[0] == '/')
+            if (currLine[0] == '/' || currLine.length() == 0)
                 continue;
             if (currLine.compare("*END*KEY*") == 0)
                 break;
@@ -480,7 +481,7 @@ void Population::readSectionList(ifstream &inFile) {
     vector<string> tokenizedVersion;
     if (inFile.is_open()) {
         while (getline(inFile, currLine)) {
-            if (currLine[0] == '/')
+            if (currLine[0] == '/' || currLine.length() == 0)
                 continue;
             if (currLine.compare("*END*SECTION*") == 0)
                 break;
@@ -488,6 +489,9 @@ void Population::readSectionList(ifstream &inFile) {
             Utility::LowerCase(currLine);
             tokenizedVersion = Utility::Tokenize(currLine, ',');
             int section = stoi(tokenizedVersion[0]);
+            if(section < 0 || section > section_count){
+               continue;
+            }
             string incompBitString = tokenizedVersion[1];
             incompatibleSectionsMatrix[section] = new bool[section_count];
             for (int i = 0; i < section_count; i++) {
@@ -510,7 +514,7 @@ void Population::readSectionCreditList(ifstream &inFile) {
     vector<string> tokenizedVersion;
     if (inFile.is_open()) {
         while (getline(inFile, currLine)) {
-            if (currLine[0] == '/')
+            if (currLine[0] == '/' || currLine.length() == 0)
                 continue;
             if (currLine.compare("*END*SECTIONCREDIT*") == 0)
                 break;
@@ -518,6 +522,9 @@ void Population::readSectionCreditList(ifstream &inFile) {
             Utility::LowerCase(currLine);
             tokenizedVersion = Utility::Tokenize(currLine, ',');
             int section = stoi(tokenizedVersion[0]);
+            if(section < 0 || section > section_count){
+                continue;
+            }
             double creditValue = stod(tokenizedVersion[1]);
             sectionCredit[section] = creditValue;
         } //end while
@@ -532,7 +539,7 @@ void Population::readTimeCreditLegend(ifstream &inFile) {
     vector<string> tokenizedVersion;
     if (inFile.is_open()) {
         while (getline(inFile, currLine)) {
-            if (currLine[0] == '/')
+            if (currLine[0] == '/' || currLine.length() == 0)
                 continue;
             if (currLine.compare("*END*TIME*CREDIT*LEGEND*") == 0)
                 break;
@@ -540,6 +547,9 @@ void Population::readTimeCreditLegend(ifstream &inFile) {
             Utility::LowerCase(currLine);
             tokenizedVersion = Utility::Tokenize(currLine, ',');
             int creditID = stoi(tokenizedVersion[0]);
+            if(creditID < 0 || creditID > credit_count){
+                continue;
+            }
             double creditValue = stod(tokenizedVersion[1]);
             timeCredLegend[creditID] = creditValue;
         } //end while
@@ -554,7 +564,7 @@ void Population::readProfessorCreditList(ifstream &inFile) {
     vector<string> tokenizedVersion;
     if (inFile.is_open()) {
         while (getline(inFile, currLine)) {
-            if (currLine[0] == '/')
+            if (currLine[0] == '/' || currLine.length() == 0)
                 continue;
             if (currLine.compare("*END*PROFCREDIT*") == 0)
                 break;
@@ -562,6 +572,9 @@ void Population::readProfessorCreditList(ifstream &inFile) {
             Utility::LowerCase(currLine);
             tokenizedVersion = Utility::Tokenize(currLine, ',');
             int professor = stoi(tokenizedVersion[0]);
+            if(professor < 0 || professor > professor_count){
+               continue;
+            }
             double creditValue = stod(tokenizedVersion[1]);
             profCreditMax[professor] = creditValue;
         } //end while
@@ -577,7 +590,7 @@ void Population::readCreditTimeslot(ifstream &inFile) {
     vector<string> tokenizedVersion;
     if (inFile.is_open()) {
         while (getline(inFile, currLine)) {
-            if (currLine[0] == '/')
+            if (currLine[0] == '/' || currLine.length() == 0)
                 continue;
             if (currLine.compare("*END*CREDIT*TIMESLOT*") == 0)
                 break;
@@ -585,7 +598,13 @@ void Population::readCreditTimeslot(ifstream &inFile) {
             Utility::LowerCase(currLine);
             tokenizedVersion = Utility::Tokenize(currLine, ',');
             int creditRow = stoi(tokenizedVersion[0]);
+            if(creditRow < 0 || creditRow > credit_count){
+               continue;
+            }
             int timeslots = stoi(tokenizedVersion[1]);
+            if(timeslots < 0 || timeslots > timeslot_count){
+               continue;
+            }
             creditTimeSlot[creditRow] = new int[timeslots + 1];
             creditTimeSlot[creditRow][0] = timeslots;
             if (timeslots > 0) {
@@ -606,7 +625,7 @@ void Population::readSectionProfessorList(ifstream &inFile) {
     vector<string> tokenizedVersion;
     if (inFile.is_open()) {
         while (getline(inFile, currLine)) {
-            if (currLine[0] == '/')
+            if (currLine[0] == '/' || currLine.length() == 0)
                 continue;
             if (currLine.compare("*END*SECTION*PROF*") == 0)
                 break;
@@ -614,7 +633,13 @@ void Population::readSectionProfessorList(ifstream &inFile) {
             Utility::LowerCase(currLine);
             tokenizedVersion = Utility::Tokenize(currLine, ',');
             int section = stoi(tokenizedVersion[0]);
+            if(section < 0 || section > section_count){
+                 continue;
+            }
             int professors = stoi(tokenizedVersion[1]);
+            if(professors < 0 || professors > professor_count){
+                 continue;
+            }
             sectionProf[section] = new int[professors + 1];
             sectionProf[section][0] = professors;
             if (professors > 0) {
@@ -636,7 +661,7 @@ void Population::readSectionTimeslotList(ifstream &inFile) {
     vector<string> tokenizedVersion;
     if (inFile.is_open()) {
         while (getline(inFile, currLine)) {
-            if (currLine[0] == '/')
+            if (currLine[0] == '/'|| currLine.length() == 0)
                 continue;
             if (currLine.compare("*END*SECTION*TIMESLOT*") == 0)
                 break;
@@ -644,8 +669,14 @@ void Population::readSectionTimeslotList(ifstream &inFile) {
             Utility::LowerCase(currLine);
             tokenizedVersion = Utility::Tokenize(currLine, ',');
             int section = stoi(tokenizedVersion[0]);
+            if(section < 0 || section > section_count){
+                continue;
+            }
             int timeslots = stoi(tokenizedVersion[1]);
-            sectionTimeslot[section] = new int[(signed) (timeslots + 2)];
+            if(timeslots < 0 || timeslots > timeslot_count){
+                continue;
+            }
+            sectionTimeslot[section] = new int[timeslots + 2];
             sectionTimeslot[section][0] = timeslots;
             if (timeslots > 0) {
                 for (int x = 1; x < timeslots + 1; ++x) {
@@ -666,7 +697,7 @@ void Population::readProfessorSectionList(ifstream &inFile) {
     vector<string> tokenizedVersion;
     if (inFile.is_open()) {
         while (getline(inFile, currLine)) {
-            if (currLine[0] == '/')
+            if (currLine[0] == '/' || currLine.length() == 0)
                 continue;
             if (currLine.compare("*END*PROF*SECTION*") == 0)
                 break;
@@ -674,8 +705,13 @@ void Population::readProfessorSectionList(ifstream &inFile) {
             Utility::LowerCase(currLine);
             tokenizedVersion = Utility::Tokenize(currLine, ',');
             int professor = stoi(tokenizedVersion[0]);
+            if(professor < 0 || professor > professor_count){
+               continue;
+            }
             int sections = stoi(tokenizedVersion[1]);
-
+            if(sections < 0 || sections > section_count){
+              continue;
+            }
             profSection[professor] = new int[sections + 1];
             profSection[professor][0] = sections;
             if (sections > 0) {
@@ -696,7 +732,7 @@ void Population::readAssociatedProfessorList(ifstream &inFile) {
     vector<string> tokenizedVersion;
     if (inFile.is_open()) {
         while (getline(inFile, currLine)) {
-            if (currLine[0] == '/')
+            if (currLine[0] == '/' || currLine.length() == 0)
                 continue;
             if (currLine.compare("*END*PROF*ASSOCIATE*") == 0)
                 break;
@@ -704,7 +740,13 @@ void Population::readAssociatedProfessorList(ifstream &inFile) {
             Utility::LowerCase(currLine);
             tokenizedVersion = Utility::Tokenize(currLine, ',');
             int professor = stoi(tokenizedVersion[0]);
+            if(professor < 0 || professor > professor_count){
+               continue;
+            }
             int associates = stoi(tokenizedVersion[1]);
+            if(associates < 0 || associates > professor_count){
+               continue;
+            }
 
             associatedProfessors[professor] = new int*[associates + 1];
             associatedProfessors[professor][0] = new int[1];
@@ -736,13 +778,16 @@ void Population::readTimeSlotList(ifstream &inFile) {
 
     if (inFile.is_open()) {
         while (getline(inFile, currLine)) {
-            if (currLine[0] == '/')
+            if (currLine[0] == '/' || currLine.length() == 0)
                 continue;
             if (currLine.compare("*END*TIMESLOT*") == 0)
                 break;
             Utility::CleanWhiteSpace(currLine);
             tokenizedVersion = Utility::Tokenize(currLine, ',');
             int timeslotID = stoi(tokenizedVersion.at(0));
+            if(timeslotID < 0 || timeslotID > timeslot_count){
+               continue;
+            }
             double creds = stod(tokenizedVersion.at(1));
             timeCredits[timeslotID] = creds;
             int isMorning = stoi(tokenizedVersion.at(2)), 
@@ -794,32 +839,40 @@ void Population::readInitialSchedule(ifstream &inFile) {
 
     vector<string> tokenizedVersion;
     string currLine;
-    individuals[0] = new Chromosome(section_count, professor_count, timeslot_count, profCreditMax, sectionCredit);
-
+    individuals[0] = new Chromosome(DELTA, section_count, professor_count, timeslot_count, profCreditMax, sectionCredit);
+    int sectionsRead = 0;
     if (inFile.is_open()) {
         while (getline(inFile, currLine)) {
-            if (currLine[0] == '/')
+            if (currLine[0] == '/' || currLine.length() == 0)
                 continue;
             if (currLine.compare("*END*INITIAL*") == 0)
                 break;
-
+            sectionsRead++;
             Utility::CleanWhiteSpace(currLine);
             Utility::LowerCase(currLine);
 
             tokenizedVersion = Utility::Tokenize(currLine, ',');
-            int geneLocation = stoi(tokenizedVersion.at(0));
-            //Gene current(stoi(tokenizedVersion.at(1)), stoi(tokenizedVersion.at(2)));
-            //individuals[0]->setGene(geneLocation, current);
-            individuals[0]->setProf(geneLocation, stoi(tokenizedVersion.at(1)));
-            individuals[0]->setTime(geneLocation, stoi(tokenizedVersion.at(2)));
+            int section = stoi(tokenizedVersion.at(0));
+            if(section < 0 || section > section_count){
+            	continue;
+            }
+            individuals[0]->setProf(section, stoi(tokenizedVersion.at(1)));
+            individuals[0]->setTime(section, stoi(tokenizedVersion.at(2)));
+            
         }
 
         if (DEBUG_INIT)
             debug << individuals[0]->print() << endl;
     }
+
     //If there are any empty genes, we want to fill them now.
     individuals[0]->fillEmpty(incompatibleSectionsMatrix, sortedSectionList, sectionProf, sectionTimeslot, &h);
-    
+	  
+    if(sectionsRead == 0){
+        initialSchedule = false;
+    } else {
+        initialSchedule = true;
+    }
     //All good, let's update fitness.
     individuals[0]->updateFitness(incompatibleSectionsMatrix, sectionPref, profPref, timeslotDaytime, timeslotConflict, timeslotConsecutive, timeslotSpread);
     weakestIndividualID = 0;
@@ -859,8 +912,13 @@ void Population::initPopulationFromFirst() {
 		      }
 		      cout.flush();
         }
-        
-        individuals[i] = new Chromosome(individuals[0]);
+        if(initialSchedule){
+            individuals[i] = new Chromosome(individuals[0]);
+        } else {
+            //cout << "No initial schedule provided, generating random individual (" << i << ")..." << endl;
+            individuals[i] = new Chromosome(DELTA, section_count, professor_count, timeslot_count, profCreditMax, sectionCredit);
+            individuals[i]->fillEmpty(incompatibleSectionsMatrix, sortedSectionList, sectionProf, sectionTimeslot, &h);
+        }
         if (DEBUG_INIT_POPULATION_COMPARED)
             debug << "Pre-Mutation: " << endl << individuals[i]->print();
 
@@ -893,7 +951,7 @@ void Population::readCoursePref(ifstream &inFile) {
     vector<string> tokenizedVersion;
     if (inFile.is_open()) {
         while (getline(inFile, currLine)) {
-            if (currLine[0] == '/')
+            if (currLine[0] == '/' || currLine.length() == 0)
                 continue;
             if (currLine.compare("*END*COURSEPREF*") == 0)
                 break;
@@ -902,6 +960,9 @@ void Population::readCoursePref(ifstream &inFile) {
             Utility::LowerCase(currLine);
             tokenizedVersion = Utility::Tokenize(currLine, ',');
             int sectionID = stoi(tokenizedVersion.at(0));
+            if(sectionID < 0 || sectionID > section_count){
+                continue;
+            }
             sectionPref[sectionID] = new int[3];
             for (int idx = 0; idx < 3; ++idx) {
                 sectionPref[sectionID][idx] = stoi(tokenizedVersion.at(idx + 1));
@@ -916,7 +977,7 @@ void Population::readProfPref(ifstream &inFile) {
 
     if (inFile.is_open()) {
         while (getline(inFile, currLine)) {
-            if (currLine[0] == '/')
+            if (currLine[0] == '/' || currLine.length() == 0)
                 continue;
             if (currLine.compare("*END*PROFPREF*") == 0)
                 break;
@@ -926,6 +987,9 @@ void Population::readProfPref(ifstream &inFile) {
 
             tokenizedVersion = Utility::Tokenize(currLine, ',');
             int profIndex = stoi(tokenizedVersion.at(0));
+            if(profIndex < 0 || profIndex > professor_count){
+                continue;
+            }
             profPref[profIndex] = new int[3];
             for (int idx = 0; idx < 3; ++idx) {
                 profPref[profIndex][idx] = stoi(tokenizedVersion.at(idx + 1));
@@ -987,9 +1051,10 @@ void Population::Evolve() {
     int len = to_string(generation_count).length();
     bool validityConfirmed = false;
     int generationOfFullValidity = generation_count + 1;
+    int repWait = 0;
     int reduceMutationInterval = generation_count / mutation_probability;
     debug << "Reduce probability every " << reduceMutationInterval << endl;
-    for (currentGeneration = 0; currentGeneration <= generation_count; ++currentGeneration) {
+    for (currentGeneration = 0; currentGeneration <= generation_count && repWait < replacement_wait; ++currentGeneration) {
         if (currentGeneration > 0 && currentGeneration % reduceMutationInterval == 0 && mutation_probability > 1)
             mutation_probability--;
         if(console){
@@ -1029,13 +1094,15 @@ void Population::Evolve() {
         if (currentGeneration > threshold_generation && !child->isValid()) {
             currentGeneration--;
             delete child;
+            repWait++;
             continue;
         }
         if (!validityConfirmed)
             validityConfirmed = allValid();
         if (child->getFitness() > individuals[parentID]->getFitness()) {
             delete individuals[parentID];
-            individuals[parentID] = new Chromosome(child);
+            individuals[parentID] = new Chromosome(child);            
+            repWait = 0;
         }
         else if (child->getFitness() > individuals[weakestIndividualID]->getFitness()) {
             //Only optimize if the sacrifice is valid.
@@ -1050,6 +1117,8 @@ void Population::Evolve() {
 
             delete individuals[weakestIndividualID];
             individuals[weakestIndividualID] = new Chromosome(child);
+            repWait = 0;
+            
 
             if (DEBUG_EVOLVE)
                 debug << individuals[weakestIndividualID]->print();
@@ -1083,7 +1152,10 @@ void Population::Evolve() {
                     }
                 }
             }
-        }
+        } else {
+          repWait++;
+        } 
+      
 
         if (validityConfirmed && generationOfFullValidity > currentGeneration && currentGeneration > threshold_generation) {
             generationOfFullValidity = currentGeneration;
@@ -1139,7 +1211,7 @@ string Population::GetFitnessData() {
     return s.str();
 }
 
-void Population::PrintEnd() {
+void Population::PrintEnd(bool printAll, bool preferences) {
     outputFile << "Final Population:" << endl;
     double strongestFitness = individuals[strongestIndividualID]->getFitness();
 
@@ -1164,7 +1236,11 @@ void Population::PrintEnd() {
 
     outputFile << "\n\nStrongest Individual: " << strongestIndividualID << endl;
     outputFile << "**BEGINRESULT**" << endl;
-    outputFile << individuals[strongestIndividualID]->print();
+    if(preferences){
+    	outputFile << individuals[strongestIndividualID]->print(sectionPref, profPref, timeslotDaytime);
+    } else {
+    	outputFile << individuals[strongestIndividualID]->print();
+    }
     outputFile << "**ENDRESULT**" << endl;
     outputFile << "Fitness: " << strongestFitness << endl;
 
@@ -1200,31 +1276,35 @@ void Population::PrintEnd() {
     else {
         outputFile << "Strongest was valid." << endl;
     }
-    int cntr = 1;
-    outputFile << "*START*PRINTING*OTHER*VALID*" << endl;
-    for (int i = 0; i < population_size; ++i) {
-        bool unique = true;
-        for (int j = 0; j < i; ++j) {
-            if (individuals[i]->equals(individuals[j])) {
-                unique = false;
-            }
-        }
-        if (!unique && individuals[i]->isValid(incompatibleSectionsMatrix, timeslotConflict, false)) {
-            outputFile << "*START*SCHEDULE*" << cntr << endl;
-            outputFile << individuals[i]->print() << endl;
-            outputFile << "Validity: " << (individuals[i]->isValid() ? "Yes" : "No") << endl;
-            outputFile << "Fitness: " << individuals[i]->getFitness() << endl;
-            outputFile << "Professor Schedule: " << endl << individuals[i]->printProfTable() << endl;
-            outputFile << "*END*SCHEDULE*" << endl;
-            cntr++;
-        }
-    }
-    outputFile << "*END*PRINTING*OTHER*VALID*" << endl;
-    outputFile << "Unique Solutions: " << --cntr << endl;
-    outputFile << "Done." << endl;
-    outputFile << endl;
-    outputFile << key.str();
-    outputFile << "*END*KEY*" << endl;
-    statFile.close();
-    //outputFile.close( );
+	
+	if(printAll){
+		int cntr = 1;
+		outputFile << "*START*PRINTING*OTHER*VALID*" << endl;
+		for (int i = 0; i < population_size; ++i) {
+			bool unique = true;
+			for (int j = 0; j < i; ++j) {
+				if (individuals[i]->equals(individuals[j])) {
+					unique = false;
+				}
+			}
+			if (!unique && individuals[i]->isValid(incompatibleSectionsMatrix, timeslotConflict, false)) {
+				outputFile << "*START*SCHEDULE*" << cntr << endl;
+				outputFile << individuals[i]->print() << endl;
+				outputFile << "Validity: " << (individuals[i]->isValid() ? "Yes" : "No") << endl;
+				outputFile << "Fitness: " << individuals[i]->getFitness() << endl;
+				outputFile << "Professor Schedule: " << endl << individuals[i]->printProfTable() << endl;
+				outputFile << "*END*SCHEDULE*" << endl;
+				cntr++;
+			}
+		}
+		outputFile << "*END*PRINTING*OTHER*VALID*" << endl;
+		outputFile << "Unique Solutions: " << --cntr << endl;
+		outputFile << "Done." << endl;
+	}
+	outputFile << endl;
+	outputFile << key.str();
+	outputFile << "*END*KEY*" << endl;
+	statFile.close();
+	//outputFile.close( );
+	
 }

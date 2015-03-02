@@ -36,25 +36,33 @@ THE SOFTWARE.
 struct stat info;
 
 int main(int argc, char* argv[] ) {
-    if(argc < 3){
-    	cerr << "Invalid number of arguments provided. Input Filename and output destination folder are required." << endl;
+    if(argc < 4){
+    	cerr << "Invalid number of arguments provided. Delta, Input Filename and output destination folder are required." << endl;
     	exit(-1);
     }
     
     int suffix_cntr = 0;
-    string prepend(argv[2]);
-    string inputFile(argv[1]);
-		if (stat (argv[1], &info) != 0){
+    int delta = stoi(argv[1]);
+    string prepend(argv[3]);
+    string inputFile(argv[2]);
+		if (stat (argv[2], &info) != 0){
 			cerr << "Invalid input file. File does not exist." << endl;
 			exit(-1);
 		}
     
-    string destinationFolder(argv[2]);
+    string destinationFolder(argv[3]);
     bool console = false;
-    if(argc == 4 && strcmp(argv[3], "yes") == 0){
+	bool printAll = false;
+    if(argc >= 5 && strcmp(argv[4], "yes") == 0){
     	cout << "Outputting to Console." << endl;
     	console = true;
     }
+	
+	if(argc == 6 && strcmp(argv[5], "all") == 0){
+    	cout << "Printing all results." << endl;
+    	printAll = true;
+    }
+	
     char hostnameCharArray[128];
     gethostname(hostnameCharArray, sizeof hostnameCharArray);
     
@@ -71,7 +79,7 @@ int main(int argc, char* argv[] ) {
    	destinationFolder += hostname + "-";
    	prepend += "stat";
     
-    if(!(stat(argv[2], &info) == 0 && info.st_mode && S_IFDIR)){
+    if(!(stat(argv[3], &info) == 0 && info.st_mode && S_IFDIR)){
     	cout << "(" << argv[2] << ") is not a valid directory. Exiting..." << endl;
     	exit(-1);
     }
@@ -83,16 +91,16 @@ int main(int argc, char* argv[] ) {
     double startTime, endTime;
     startTime = getCPUTime( );
     
-    Population p(inputFile, destinationFolder, suffix_cntr, console);
+    Population p(delta, inputFile, destinationFolder, suffix_cntr, console);
     p.Evolve( );
     if(console){
 		  cout << endl << "End Evolution" << endl;
 		  cout << "*********************************************************************" << endl;
 		}
-    p.PrintEnd( );
+    p.PrintEnd(printAll, true);
     endTime = getCPUTime( );
     ofstream statFile;
-    string file = destinationFolder + "/stat" + to_string(suffix_cntr) + ".txt";
+    string file = prepend + to_string(suffix_cntr) + ".txt";
     statFile.open(file, ofstream::out | ofstream::app);
     statFile << "CPU time used = " << ( endTime - startTime ) << endl;
     statFile.close( );

@@ -33,8 +33,8 @@ THE SOFTWARE.
 #define DEBUG_ASSIGNMENT 0
 #define DEBUG_MUTATION 0
 #define DEBUG_BALANCEPROFLOAD 0
-#define DELTA_MAX -2.0
-#define DELTA_MIN 2.0
+//#define DELTA_MAX -2.0
+//#define DELTA_MIN 2.0
 #define DEBUG_VALIDATE 0
 #define DEBUG_PROF_LOAD 0
 #define DEBUG_OUTPUT 1
@@ -56,7 +56,7 @@ class Helper;
 
 class Chromosome {
 public:
-    Chromosome(int geneLength, int profCount, int timeslotCount, double * profCredsMax, double * section_credit);
+    Chromosome(int deltaValue, int geneLength, int profCount, int timeslotCount, double * profCredsMax, double * section_credit);
     Chromosome(Chromosome *);
     Chromosome(Chromosome &);
     virtual ~Chromosome();
@@ -74,6 +74,7 @@ public:
 
     bool sortByProfessorCredit(int i, int j);
     string print();
+    string print(int ** sectionPref, int ** profPref, bool ** timeslotDaytime);
     string getProfessorLoads();
     string print(int gene);
     string printProfTable();
@@ -94,6 +95,9 @@ private:
     static const int PENALTY_SECTION_PREFERENCE = 5;
     static const int PENATLY_PROFESSOR_CONSECUTIVE_TIMES = 5;
     static const int PENATLY_PROFESSOR_SPREADOUT_TIMES = 5;
+    
+    int DELTA_MIN;
+    int DELTA_MAX;
 
     Gene ** sections;
     bool ** sectionTabooList;

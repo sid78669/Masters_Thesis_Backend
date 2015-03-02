@@ -36,9 +36,11 @@
 /// <param name="timeslotCount">The timeslot count.</param>
 /// <param name="profCredsMax">The prof creds maximum.</param>
 /// <param name="section_credit">The section_credit.</param>
-Chromosome::Chromosome(int sectionCount, int profCount, int timeslotCount, double * profCredsMax, double * section_credit) :
+Chromosome::Chromosome(int deltaValue, int sectionCount, int profCount, int timeslotCount, double * profCredsMax, double * section_credit) :
         section_count(sectionCount), prof_count(profCount), timeslot_count(timeslotCount), sectionCredit(section_credit) {
     fitness = 0;
+    DELTA_MAX = -1*deltaValue;
+    DELTA_MIN = deltaValue;
     valid = false;
     sections = new Gene*[sectionCount];
     sectionTabooList = new bool *[section_count];
@@ -61,6 +63,9 @@ Chromosome::Chromosome(int sectionCount, int profCount, int timeslotCount, doubl
 Chromosome::Chromosome(Chromosome * source) :
         section_count(source->section_count), prof_count(source->prof_count), timeslot_count(source->timeslot_count) {
     sectionCredit = source->sectionCredit;
+    DELTA_MAX = source->DELTA_MAX;
+    DELTA_MIN = source->DELTA_MIN;
+
     valid = source->valid;
     sections = new Gene*[section_count];
     professorCredits = new double[source->prof_count];
@@ -87,6 +92,8 @@ Chromosome::Chromosome(Chromosome * source) :
 Chromosome::Chromosome(Chromosome &source) :
         section_count(source.section_count), prof_count(source.prof_count), timeslot_count(source.timeslot_count) {
     valid = source.valid;
+    DELTA_MAX = source.DELTA_MAX;
+    DELTA_MIN = source.DELTA_MIN;
     sectionCredit = source.sectionCredit;
     sections = new Gene*[section_count];
     sectionTabooList = new bool *[section_count];
@@ -219,6 +226,8 @@ bool Chromosome::equals(Chromosome * other) {
 /// <param name="sectionID">The section identifier.</param>
 /// <param name="newTime">The new time.</param>
 void Chromosome::setTime(int sectionID, int newTime) {
+    if(newTime < 0 || newTime >= timeslot_count)
+       return;
     if (sections[sectionID]) {
         sections[sectionID]->setTimeID(newTime);
     } else {
@@ -317,6 +326,49 @@ string Chromosome::print() {
         if (DEBUG_OUTPUT)
             rtnVal += "s";
         rtnVal += to_string(i) + ", " + print(i) + "\n";
+    }
+
+    rtnVal += "----------------------------\n";
+
+    return rtnVal;
+}
+
+string Chromosome::print(int ** sectionPref, int ** profPref, bool ** timeslotDaytime) {
+    string rtnVal;
+    for (int i = 0; i < section_count; i++) {
+        if (DEBUG_OUTPUT)
+            rtnVal += "s";
+        rtnVal += to_string(i) + ", " + print(i);
+        for(int t = 0; t < 3; ++t){
+        	if(timeslotDaytime[getTime(i)][t]){
+        		rtnVal += ", ";
+        		switch(profPref[getProf(i)][t]){
+        			case 0:
+        				rtnVal += "H";
+        				break;
+        			case 1:
+        				rtnVal += "N";
+        				break;
+        			case 2:
+        				rtnVal += "L";
+        				break;
+        		}
+        		rtnVal += ", ";
+        		switch(sectionPref[i][t]){
+        			case 0:
+        				rtnVal += "H";
+        				break;
+        			case 1:
+        				rtnVal += "N";
+        				break;
+        			case 2:
+        				rtnVal += "L";
+        				break;
+        		}
+        		break;
+        	}
+        }
+        rtnVal += "\n";
     }
 
     rtnVal += "----------------------------\n";
@@ -754,8 +806,9 @@ void Chromosome::repair(int * sortedSectionList, bool ** incompatibleSectionsMat
         }*/
         updateTabooList(incompatibleSectionsMatrix);
         for (int index = 0; index < section_count; ++index) {
-            int currentSection = sortedSectionList[index];
-            for (int otherSection = 0; otherSection < section_count; ++otherSection) {
+            int currentSection = index; //sortedSectionList[index];
+            //for (int otherSection = 0; otherSection < section_count; ++otherSection) {
+            for (int otherSection = currentSection + 1; otherSection < section_count; ++otherSection) {
                 if (currentSection == otherSection)
                     continue;
                 if (incompatibleSectionsMatrix[currentSection][otherSection] || getProf(currentSection) == getProf(otherSection)) {

@@ -39,7 +39,7 @@ public:
 
     Helper( ) {
         seed = plant();
-        seed = 2381215245;
+        //seed = 2381215245;
         rand_gen.seed(seed);
     }
 

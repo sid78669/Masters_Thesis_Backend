@@ -60,9 +60,9 @@ class Chromosome;
 
 class Population {
 public:
-    Population(string dataFilePath, string destinationFolder, int suffixCounter, bool _console); //Constructor
+    Population(int deltaValue, string dataFilePath, string destinationFolder, int suffixCounter, bool _console); //Constructor
     void Evolve( ); //Evolution 
-    void PrintEnd( ); //Final output 
+    void PrintEnd(bool printAll, bool preferences = false); //Final output 
     virtual ~Population( ); //Destructor
     int suffix_cntr; //File suffix
 private:
@@ -71,6 +71,7 @@ private:
     string destination_folder;
     stringstream key;
     const bool console; //If true, output to console.
+    bool initialSchedule;
     //Ascending order of being read from data file
     int generation_count;
     int population_size;
@@ -83,6 +84,7 @@ private:
     
     //Predetermined variable
     const int REPAIR_TRIES;
+    const int DELTA;
 
     //Generated variables
     double initFitness;
